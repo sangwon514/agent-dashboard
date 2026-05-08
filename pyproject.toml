@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-dashboard"
+version = "0.1.0"
+description = "Live monitor for Claude Code subagent activity across all sessions."
+requires-python = ">=3.11"
+dependencies = [
+  "watchdog>=4.0",
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.32",
+  "sse-starlette>=2.1",
+  "rich>=13.7",
+]
+
+[project.optional-dependencies]
+menubar = ["rumps>=0.4.0"]
+
+[project.scripts]
+agent-dashboard = "agent_dashboard.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["agent_dashboard*"]
+
+[tool.setuptools.package-data]
+agent_dashboard = ["ui_web/static/*"]

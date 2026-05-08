@@ -1,0 +1,11 @@
+{"type":"last-prompt","leafUuid":"lf-1","sessionId":"sess-1"}
+{"type":"assistant","sessionId":"sess-1","timestamp":"2026-05-08T01:00:00Z","message":{"role":"assistant","content":[{"type":"text","text":"plain text, ignore"}]}}
+{"type":"assistant","sessionId":"sess-1","timestamp":"2026-05-08T01:00:05Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"tu-001","name":"Bash","input":{"command":"ls"}}]}}
+{"type":"assistant","sessionId":"sess-1","timestamp":"2026-05-08T01:01:00Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"tu-002","name":"Agent","input":{"description":"Branch ship-readiness audit","subagent_type":"code-reviewer","prompt":"Review the current branch.\nLook for blockers."}}]}}
+{"type":"user","sessionId":"sess-1","timestamp":"2026-05-08T01:01:30Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"tu-002","is_error":false,"content":"audit complete"}]}}
+{"type":"assistant","sessionId":"sess-1","timestamp":"2026-05-08T01:02:00Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"tu-003","name":"Agent","input":{"description":"Independent migration review","prompt":"Review migration"}}]}}
+{"type":"user","sessionId":"sess-1","timestamp":"2026-05-08T01:02:45Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"tu-003","is_error":true,"content":"failed"}]}}
+{"type":"assistant","sessionId":"sess-1","timestamp":"2026-05-08T01:03:00Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"tu-004","name":"Agent","input":{"description":"Pending agent","subagent_type":"surveyor","prompt":""}}]}}
+
+{"GARBAGE LINE NOT JSON
+{"type":"assistant","sessionId":"sess-1","timestamp":"2026-05-08T01:04:00Z","message":{"role":"assistant","content":"unexpected non-list content"}}

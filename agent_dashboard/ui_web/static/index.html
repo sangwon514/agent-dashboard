@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>agent-dashboard</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <h1>agent-dashboard</h1>
+    <div class="summary" id="summary">connecting…</div>
+    <div class="controls">
+      <input id="search" type="search" placeholder="filter description / subagent / project…" autocomplete="off">
+      <label class="filter"><input type="checkbox" id="f-running" checked> running</label>
+      <label class="filter"><input type="checkbox" id="f-done" checked> done</label>
+      <label class="filter"><input type="checkbox" id="f-failed" checked> failed</label>
+      <label class="filter"><input type="checkbox" id="f-stale" checked> stale</label>
+    </div>
+  </header>
+  <main id="root"></main>
+  <footer>
+    <span id="conn">●</span>
+    <span class="muted">localhost:7878 · sourced from <code>~/.claude/projects/*</code> + <code>/tmp/wt-status</code></span>
+  </footer>
+  <script src="/static/app.js"></script>
+</body>
+</html>
