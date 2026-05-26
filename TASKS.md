@@ -65,6 +65,20 @@
 
 ---
 
+## 🆕 추가 작업 (subagent-pet · drag · perf)
+
+### C5 · Cursor 서브에이전트 → 부모 세션 펫 머지 (Codex) 🔵
+- **파일**: `core/watcher.py`, `core/cursor_parser.py` + tests (Python only)
+- **내용**: 현재 subagents/*.jsonl 은 세션에서 제외만 됨. 메인 agent-transcript 세션 1개에 그 폴더의 subagents/*.jsonl 을 **펫(AgentEvent, subagent_type='cursor-agent')** 으로 포함. tool_use_id 는 서브에이전트 uuid 로 유일하게.
+
+### U6 · 많은 세션 렉 해결 (head) 🔵
+- **파일**: `app.js` (+ `style.css`)
+- **내용**: 1000+ 세션/스프라이트 렌더 시 렉. 가시 영역/상한 렌더(가상화 or cap+더보기), 애니메이션/DOM 비용 절감.
+
+### U5 · 세션 많을 때 드래그/팬 (head) 🔵
+- **파일**: `app.js` (+ `style.css`)
+- **내용**: 씬에 캐릭터 많을 때 화면을 드래그로 팬(이동). 기존 캐릭터 위치 드래그와 충돌 없게.
+
 ## 🧠 머리 직접 / 직렬 (병렬 금지 — 의존·경계)
 - **P6-2 파싱 실패 카운터**: 백엔드 카운트(parser/store/server = Codex) + 헤더 표시(app.js = Cursor) 가 의존 → 머리가 순서 배정. 지금 병렬 큐에 넣지 않음.
 - **경계 파일**: `pyproject.toml`, `server.py` 의 static 서빙부 등 두 도메인이 만나는 변경.
