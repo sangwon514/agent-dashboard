@@ -3409,7 +3409,11 @@ function renderRoom(snap, projectKeyName) {
 
   // 세션을 방 안에 배치 — 가로로 분포, 같은 세션의 펫은 주인공 옆에.
   // 세션이 N개면 가로로 등분, 세로는 약간 zig-zag 로 자연스럽게.
-  const ordered = [...sessions].sort((a, b) => (b.last_activity || '').localeCompare(a.last_activity || ''));
+  const _orderedAll = [...sessions].sort((a, b) => (b.last_activity || '').localeCompare(a.last_activity || ''));
+  // 렉 방지: 한 방에 렌더할 휴머노이드 상한 (초과분은 "+N 더" 로 표기). 최근 활동순으로 cap.
+  const ROOM_CAP = 60;
+  const ordered = _orderedAll.slice(0, ROOM_CAP);
+  const roomHidden = _orderedAll.length - ordered.length;
   const N = ordered.length;
 
   const entities = []; // 장면 위에 배치할 모든 캐릭터 HTML
@@ -3535,7 +3539,7 @@ function renderRoom(snap, projectKeyName) {
       <button class="back-btn" onclick="window.goLobby()"><span class="back-arrow">${renderSprite('arrow-back', 1)}</span> 마을</button>
       <div class="room-title-big">${renderSprite('door', 2)} ${escapeHtml(projectKeyName)}</div>
       <div class="room-meta-line muted">
-        ${ordered.length}명 거주 · 펫 ${totalPets}마리
+        ${sessions.length}명 거주${roomHidden > 0 ? ` <span class="room-cap-note">(최근 ${ROOM_CAP}명 표시 · +${roomHidden})</span>` : ''} · 펫 ${totalPets}마리
         ${busyCount > 0 ? ` · ${busyCount}마리 일하는 중` : ''}
       </div>
     </div>

@@ -67,11 +67,11 @@
 
 ## 🆕 추가 작업 (subagent-pet · drag · perf)
 
-### C5 · Cursor 서브에이전트 → 부모 세션 펫 머지 (Codex) 🔵
+### C5 · Cursor 서브에이전트 → 부모 세션 펫 머지 (Codex) ✅ (codex → head 리뷰·커밋)
 - **파일**: `core/watcher.py`, `core/cursor_parser.py` + tests (Python only)
 - **내용**: 현재 subagents/*.jsonl 은 세션에서 제외만 됨. 메인 agent-transcript 세션 1개에 그 폴더의 subagents/*.jsonl 을 **펫(AgentEvent, subagent_type='cursor-agent')** 으로 포함. tool_use_id 는 서브에이전트 uuid 로 유일하게.
 
-### U6 · 많은 세션 렉 해결 (head) 🔵
+### U6 · 많은 세션 렉 해결 (head) ✅ — 방 휴머노이드 60명 cap + "+N 더"
 - **파일**: `app.js` (+ `style.css`)
 - **내용**: 1000+ 세션/스프라이트 렌더 시 렉. 가시 영역/상한 렌더(가상화 or cap+더보기), 애니메이션/DOM 비용 절감.
 
