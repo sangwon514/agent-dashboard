@@ -219,6 +219,82 @@ body[data-town="codex"] .scene {
 body[data-town="codex"] .scene .floor {
   background: linear-gradient(to bottom, transparent, rgba(60, 85, 120, .15));
 }
+
+/* ── 다크 모드 월드 확장 — 카드/헤더만 어두워지던 부조화 해소.
+   body[data-town] / header / town-signpost 가 라이트 톤을 하드코딩해
+   --bg dark 변수를 덮어쓰던 문제를 dusk/night 팔레트로 통일. */
+:root[data-theme="dark"] body[data-town="claude"] {
+  background: linear-gradient(180deg, #1a2236 0%, #2d2418 100%);
+}
+:root[data-theme="dark"] body[data-town="codex"] {
+  background: linear-gradient(180deg, #141a2a 0%, #232b3d 100%);
+}
+:root[data-theme="dark"] header {
+  background: rgba(34, 28, 22, 0.92);
+  border-bottom-color: rgba(120, 100, 70, 0.45);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+:root[data-theme="dark"] body[data-town="codex"] header {
+  background: rgba(28, 36, 52, 0.92);
+  border-bottom-color: rgba(80, 110, 150, 0.5);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+:root[data-theme="dark"] #town-signpost {
+  background: linear-gradient(180deg, rgba(40, 30, 20, 0.4) 0%, rgba(40, 30, 20, 0.6) 100%);
+  border-bottom-color: rgba(120, 100, 70, 0.45);
+}
+:root[data-theme="dark"] .signpost-frame {
+  background: rgba(48, 40, 30, 0.85);
+  border-color: rgba(160, 130, 85, 0.55);
+  box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.45);
+}
+:root[data-theme="dark"] .signpost-link { color: #e0cea0; }
+:root[data-theme="dark"] .signpost-link:hover {
+  background: rgba(180, 140, 80, 0.18);
+  border-color: rgba(160, 130, 85, 0.35);
+}
+:root[data-theme="dark"] .signpost-link.active {
+  background: rgba(200, 160, 90, 0.28);
+  border-color: rgba(200, 160, 90, 0.55);
+}
+:root[data-theme="dark"] .signpost-count {
+  background: rgba(220, 190, 130, 0.7);
+  color: #2a1d0f;
+}
+:root[data-theme="dark"] .signpost-link.active .signpost-count {
+  background: rgba(240, 210, 140, 0.9);
+}
+:root[data-theme="dark"] .signpost-sep { color: #d4c39b; }
+:root[data-theme="dark"] body[data-town="codex"] #town-signpost {
+  background: linear-gradient(180deg, rgba(30, 45, 70, 0.5) 0%, rgba(30, 45, 70, 0.75) 100%);
+  border-bottom-color: rgba(80, 110, 150, 0.5);
+}
+:root[data-theme="dark"] body[data-town="codex"] .signpost-frame {
+  background: rgba(36, 48, 68, 0.9);
+  border-color: rgba(120, 160, 200, 0.5);
+  box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
+}
+:root[data-theme="dark"] body[data-town="codex"] .signpost-link { color: #cfdfee; }
+:root[data-theme="dark"] body[data-town="codex"] .signpost-link.active {
+  background: rgba(90, 130, 180, 0.35);
+  border-color: rgba(140, 180, 220, 0.55);
+}
+:root[data-theme="dark"] body[data-town="codex"] .signpost-count {
+  background: rgba(140, 180, 220, 0.7);
+  color: #0e1a2c;
+}
+:root[data-theme="dark"] body[data-town="codex"] .signpost-sep { color: #cfdfee; }
+:root[data-theme="dark"] body[data-town="codex"] .lobby-wrap {
+  background: linear-gradient(180deg, rgba(30, 40, 60, 0.4) 0%, rgba(20, 28, 44, 0.55) 100%);
+}
+:root[data-theme="dark"] body[data-town="codex"] .room-card {
+  background: linear-gradient(180deg, #2a3346 0%, #1d2435 100%);
+  border-color: rgba(120, 160, 200, 0.4);
+}
+:root[data-theme="dark"] body[data-town="codex"] .scene::before {
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 5, 15, 0.45) 100%);
+}
+
 /* 픽셀 chrome 아이콘 — inline svg 정렬 */
 .icon-mount, .back-arrow { display: inline-flex; align-items: center; vertical-align: middle; }
 .icon-mount svg, .back-arrow svg, .room-title-big svg, .room-card .door svg {
