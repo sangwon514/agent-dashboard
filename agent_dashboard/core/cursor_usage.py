@@ -81,22 +81,34 @@ def _sum_recent_lines(conn: sqlite3.Connection, now: float) -> dict[str, int]:
         return totals
 
     cols = _columns(conn, "scored_commits")
-    wanted = {
-        "linesAdded": "added",
-        "linesDeleted": "deleted",
-        "composerLinesAdded": "composer_added",
-        "composerLinesDeleted": "composer_deleted",
-    }
-    selected = [name for name in ("timestamp", *wanted) if name in cols]
-    if "timestamp" not in selected:
+    timestamp_column = next(
+        (name for name in ("timestamp", "scoredAt", "commitDate") if name in cols),
+        None,
+    )
+    if timestamp_column is None:
         return totals
-    rows = conn.execute(f"SELECT {', '.join(selected)} FROM scored_commits").fetchall()
-    for row in rows:
-        if not _is_recent(row["timestamp"], now):
+
+    wanted = {
+        "added": ("linesAdded", "lines_added"),
+        "deleted": ("linesDeleted", "lines_deleted"),
+        "composer_added": ("composerLinesAdded", "composer_lines_added"),
+        "composer_deleted": ("composerLinesDeleted", "composer_lines_deleted"),
+    }
+    selected = {}
+    select_columns = [f"{timestamp_column} AS event_time"]
+    for key, names in wanted.items():
+        column = next((name for name in names if name in cols), None)
+        if column is None:
             continue
-        for column, key in wanted.items():
-            if column in selected:
-                totals[key] += _int_or_zero(row[column])
+        selected[key] = column
+        select_columns.append(f"{column} AS {key}")
+
+    rows = conn.execute(f"SELECT {', '.join(select_columns)} FROM scored_commits").fetchall()
+    for row in rows:
+        if not _is_recent(row["event_time"], now):
+            continue
+        for key in selected:
+            totals[key] += _int_or_zero(row[key])
     totals["total_changed"] = (
         totals["added"]
         + totals["deleted"]
