@@ -4446,7 +4446,9 @@ setInterval(applyTimeOfDay, 10 * 60 * 1000);
     const town = (typeof currentTown === 'function') ? currentTown() : 'claude';
     const claude = (town === 'claude') ? toolGroup('Claude', d.claude) : { html: '', worst: 0 };
     const codex  = (town === 'codex')  ? toolGroup('Codex',  d.codex)  : { html: '', worst: 0 };
-    const cursor = (town === 'cursor') ? cursorGroup(d.cursor) : { html: '', worst: 0 };
+    // Cursor 의 compact 24h activity 는 항상 표시 — rate-limit bar 가 아니므로
+    // 다른 마을에 있어도 ambient 로 표시 가능 (cursorGroup 자체가 데이터 없으면 빈 html).
+    const cursor = cursorGroup(d.cursor);
     if (!claude.html && !codex.html && !cursor.html) {
       el.hidden = true;
       el.removeAttribute('data-severity');
