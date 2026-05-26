@@ -99,6 +99,17 @@ class Store:
             "wt_status": wt,
         }
 
+    def health(self) -> dict:
+        with self._lock:
+            last = max(
+                (meta.get("last_activity") for meta in self._session_meta.values()),
+                default=None,
+            )
+            return {
+                "last_event_at": last.isoformat() if last else None,
+                "session_count": len(self._transcript),
+            }
+
     @staticmethod
     def _event_dict(e: AgentEvent) -> dict:
         return {

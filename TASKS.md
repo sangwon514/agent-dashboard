@@ -9,7 +9,7 @@
 
 ## ✋ Codex lane — Python only (`agent_dashboard/**/*.py`, `tests/**`)
 
-### C1 · `/healthz` 엔드포인트 (ROADMAP P8-1) ⬜  ← 여기부터
+### C1 · `/healthz` 엔드포인트 (ROADMAP P8-1) ✅  ← 여기부터
 - **파일**: `agent_dashboard/ui_web/server.py` + `tests/`
 - **내용**: `GET /healthz` → `{ok, watcher_alive, last_event_at, session_count}`. watcher 정상=200, 죽었으면 503.
 - **수용**: `curl -s -o /dev/null -w '%{http_code}' /healthz` = 200. watcher dead 모킹 시 503. 단위테스트 1건.

@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sse_starlette.sse import EventSourceResponse
 
@@ -54,10 +54,26 @@ def make_app() -> FastAPI:
             log.info("watchers stopped")
 
     app = FastAPI(lifespan=lifespan, title="agent-dashboard")
+    app.state.store = store
+    app.state.jsonl_watcher = js_watcher
+    app.state.wt_status_watcher = wt_watcher
 
     @app.get("/")
     async def root():
         return FileResponse(STATIC / "index.html")
+
+    @app.get("/healthz")
+    async def healthz():
+        watcher_alive = js_watcher.is_alive() and wt_watcher.is_alive()
+        payload = {
+            "ok": watcher_alive,
+            "watcher_alive": watcher_alive,
+            **store.health(),
+        }
+        return JSONResponse(
+            status_code=200 if watcher_alive else 503,
+            content=payload,
+        )
 
     @app.get("/api/snapshot")
     async def snapshot():

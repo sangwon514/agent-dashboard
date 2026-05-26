@@ -63,6 +63,9 @@ class JsonlWatcher:
         self._observer.stop()
         self._observer.join(timeout=5)
 
+    def is_alive(self) -> bool:
+        return self._started and self._observer.is_alive()
+
     def _root_for(self, path: Path) -> tuple[Path, str, Callable, str] | None:
         """path 가 어느 WATCH_ROOT 아래에 있는지 찾기. 못 찾으면 None."""
         try:

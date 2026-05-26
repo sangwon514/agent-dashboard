@@ -71,6 +71,9 @@ class WtStatusWatcher:
         self._observer.stop()
         self._observer.join(timeout=5)
 
+    def is_alive(self) -> bool:
+        return self._started and self._observer.is_alive()
+
     def _rescan(self) -> None:
         entries: dict[str, WtStatusEntry] = {}
         if WT_STATUS_DIR.exists():
