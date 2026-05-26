@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from pathlib import Path
 
 from agent_dashboard.core.codex_parser import parse_codex_jsonl
@@ -71,3 +72,46 @@ def test_store_empty_events_default_tool_is_claude():
     store.update_transcript(fake, {})
     snap = store.snapshot()
     assert snap["sessions"][0]["tool"] == "claude"
+
+
+def test_store_snapshot_marks_idle_running_event_orphaned():
+    lines = [
+        '{"timestamp":"2026-05-13T10:00:00Z","message":{"content":[{"type":"tool_use","name":"Agent","id":"toolu_idle","input":{"subagent_type":"explorer","description":"find files","prompt":"go look"}}]}}'
+    ]
+    events = parse_jsonl(
+        lines,
+        project_slug="-Users-x-claude-project",
+        project_cwd="/Users/x/claude-project",
+        session_id="claude-sid-1",
+        now=datetime(2026, 5, 13, 10, 5, 0, tzinfo=timezone.utc),
+    )
+    assert events["toolu_idle"].status == "running"
+
+    store = Store(now=lambda: datetime(2026, 5, 13, 10, 31, 0, tzinfo=timezone.utc))
+    fake = Path("/Users/x/.claude/projects/-Users-x-claude-project/claude-sid-1.jsonl")
+    store.update_transcript(fake, events)
+
+    snap = store.snapshot()
+    assert snap["sessions"][0]["events"][0]["status"] == "orphaned"
+
+
+def test_store_snapshot_uses_last_transcript_activity_for_idle_status():
+    lines = [
+        '{"timestamp":"2026-05-13T10:00:00Z","message":{"content":[{"type":"tool_use","name":"Agent","id":"toolu_idle","input":{"subagent_type":"explorer","description":"find files","prompt":"go look"}}]}}',
+        '{"timestamp":"2026-05-13T10:25:00Z","message":{"content":[{"type":"text","text":"still active"}]}}',
+    ]
+    events = parse_jsonl(
+        lines,
+        project_slug="-Users-x-claude-project",
+        project_cwd="/Users/x/claude-project",
+        session_id="claude-sid-1",
+        now=datetime(2026, 5, 13, 10, 26, 0, tzinfo=timezone.utc),
+    )
+    assert events["toolu_idle"].status == "running"
+
+    store = Store(now=lambda: datetime(2026, 5, 13, 10, 51, 0, tzinfo=timezone.utc))
+    fake = Path("/Users/x/.claude/projects/-Users-x-claude-project/claude-sid-1.jsonl")
+    store.update_transcript(fake, events)
+
+    snap = store.snapshot()
+    assert snap["sessions"][0]["events"][0]["status"] == "stale"

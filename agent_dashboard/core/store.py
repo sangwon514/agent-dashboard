@@ -7,7 +7,7 @@ from threading import Lock
 from typing import Callable
 
 from .model import AgentEvent, WtStatusEntry
-from .parser import display_project_name
+from .parser import display_project_name, idle_status
 
 log = logging.getLogger(__name__)
 
@@ -15,12 +15,13 @@ log = logging.getLogger(__name__)
 class Store:
     """Thread-safe in-memory store for transcript events + wt-status entries."""
 
-    def __init__(self):
+    def __init__(self, now: Callable[[], datetime] | None = None):
         self._lock = Lock()
         self._transcript: dict[str, dict[str, AgentEvent]] = {}
         self._session_meta: dict[str, dict] = {}
         self._wt: dict[str, WtStatusEntry] = {}
         self._subs: list[Callable[[], None]] = []
+        self._now = now or (lambda: datetime.now(timezone.utc))
 
     def subscribe(self, fn: Callable[[], None]) -> None:
         with self._lock:
@@ -56,8 +57,11 @@ class Store:
             project_cwd = str(path.parent)
             # tool 은 인자값 그대로 (watcher 가 알려준 root 의 tool)
         last = max(
-            (e.finished_at or e.started_at for e in events.values()),
-            default=datetime.now(timezone.utc),
+            (
+                getattr(e, "last_activity", None) or e.finished_at or e.started_at
+                for e in events.values()
+            ),
+            default=self._now(),
         )
         with self._lock:
             self._transcript[session_id] = events
@@ -75,10 +79,12 @@ class Store:
         self._notify()
 
     def snapshot(self) -> dict:
+        now = self._now()
         with self._lock:
             sessions = []
             for sid, evs in self._transcript.items():
                 meta = self._session_meta.get(sid, {})
+                last_activity = meta.get("last_activity")
                 sessions.append(
                     {
                         "session_id": sid,
@@ -87,14 +93,17 @@ class Store:
                         "project_display": display_project_name(meta.get("project_slug", "")),
                         "tool": meta.get("tool", "claude"),
                         "last_activity": meta.get(
-                            "last_activity", datetime.now(timezone.utc)
+                            "last_activity", now
                         ).isoformat(),
-                        "events": [self._event_dict(e) for e in evs.values()],
+                        "events": [
+                            self._event_dict(e, now=now, last_activity=last_activity)
+                            for e in evs.values()
+                        ],
                     }
                 )
             wt = [self._wt_dict(e) for e in self._wt.values()]
         return {
-            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "generated_at": now.isoformat(),
             "sessions": sessions,
             "wt_status": wt,
         }
@@ -111,7 +120,15 @@ class Store:
             }
 
     @staticmethod
-    def _event_dict(e: AgentEvent) -> dict:
+    def _event_dict(
+        e: AgentEvent,
+        *,
+        now: datetime,
+        last_activity: datetime | None = None,
+    ) -> dict:
+        status = e.status
+        if status in ("running", "stale", "orphaned"):
+            status = idle_status(e.started_at, now, last_activity=last_activity)
         return {
             "tool_use_id": e.tool_use_id,
             "subagent_type": e.subagent_type,
@@ -119,7 +136,7 @@ class Store:
             "prompt_first_line": e.prompt_first_line,
             "started_at": e.started_at.isoformat(),
             "finished_at": e.finished_at.isoformat() if e.finished_at else None,
-            "status": e.status,
+            "status": status,
             "is_error": e.is_error,
             "duration_sec": e.duration_sec,
         }

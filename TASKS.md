@@ -15,7 +15,7 @@
 - **수용**: `curl -s -o /dev/null -w '%{http_code}' /healthz` = 200. watcher dead 모킹 시 503. 단위테스트 1건.
 - **lane**: server.py 의 라우트 등록부만. static 서빙/HTML 은 건드리지 않음(경계).
 
-### C2 · orphaned idle 감지 (ROADMAP P6-4) 🔵 (codex 자율 dispatch)
+### C2 · orphaned idle 감지 (ROADMAP P6-4) ✅ (codex dispatch → head 리뷰·커밋)
 - **파일**: `agent_dashboard/core/{store,parser}.py` + `tests/`
 - **내용**: 마지막 활동 후 N분(예: 30m) idle 인 `running` 호출 → `orphaned`. (`Status` literal 에 이미 존재, 판정 로직만 없음.)
 - **수용**: idle fixture → `orphaned` 단위테스트. 기존 stale 로직과 충돌 없게.

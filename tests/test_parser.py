@@ -63,6 +63,21 @@ class ParseJsonlTests(unittest.TestCase):
         # done 은 그대로 done
         self.assertEqual(evs["tu-002"].status, "done")
 
+    def test_orphaned_after_idle_timeout(self):
+        late = datetime(2026, 5, 8, 1, 34, 1, tzinfo=timezone.utc)
+        with self.path.open() as f:
+            evs = parse_jsonl(f, project_slug="t", project_cwd="/", session_id="s", now=late)
+        self.assertEqual(evs["tu-004"].status, "orphaned")
+
+    def test_idle_timeout_uses_last_transcript_activity(self):
+        lines = [
+            '{"timestamp":"2026-05-08T01:00:00Z","message":{"content":[{"type":"tool_use","name":"Agent","id":"tu-running","input":{"description":"Pending agent"}}]}}',
+            '{"timestamp":"2026-05-08T01:25:00Z","message":{"content":[{"type":"text","text":"still active"}]}}',
+        ]
+        now = datetime(2026, 5, 8, 1, 50, 1, tzinfo=timezone.utc)
+        evs = parse_jsonl(lines, project_slug="t", project_cwd="/", session_id="s", now=now)
+        self.assertEqual(evs["tu-running"].status, "stale")
+
     def test_prompt_first_line_truncated(self):
         ev = self.events["tu-002"]
         self.assertEqual(ev.prompt_first_line, "Review the current branch.")

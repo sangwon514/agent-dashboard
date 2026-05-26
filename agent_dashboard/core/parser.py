@@ -4,9 +4,10 @@ import json
 from datetime import datetime, timezone
 from typing import Iterable
 
-from .model import AgentEvent
+from .model import AgentEvent, Status
 
 _STALE_AFTER_SEC = 600
+_ORPHANED_AFTER_SEC = 1800
 
 
 def _parse_ts(s: str | None) -> datetime:
@@ -16,6 +17,23 @@ def _parse_ts(s: str | None) -> datetime:
         return datetime.fromisoformat(s.replace("Z", "+00:00"))
     except ValueError:
         return datetime.now(timezone.utc)
+
+
+def idle_status(
+    started_at: datetime,
+    now: datetime,
+    *,
+    last_activity: datetime | None = None,
+) -> Status:
+    reference = started_at
+    if last_activity is not None and last_activity > reference:
+        reference = last_activity
+    idle_sec = (now - reference).total_seconds()
+    if idle_sec > _ORPHANED_AFTER_SEC:
+        return "orphaned"
+    if idle_sec > _STALE_AFTER_SEC:
+        return "stale"
+    return "running"
 
 
 def parse_jsonl(
@@ -34,6 +52,7 @@ def parse_jsonl(
     now = now or datetime.now(timezone.utc)
     events: dict[str, AgentEvent] = {}
     results: dict[str, dict] = {}
+    last_activity: datetime | None = None
 
     for raw in lines:
         raw = raw.strip()
@@ -52,6 +71,8 @@ def parse_jsonl(
             continue
 
         ts = _parse_ts(d.get("timestamp"))
+        if last_activity is None or ts > last_activity:
+            last_activity = ts
 
         for c in content:
             if not isinstance(c, dict):
@@ -89,17 +110,15 @@ def parse_jsonl(
                 }
 
     for tu_id, ev in events.items():
+        if last_activity is not None:
+            setattr(ev, "last_activity", last_activity)
         r = results.get(tu_id)
         if r is not None:
             ev.finished_at = r["ts"]
             ev.is_error = r["is_error"]
             ev.status = "failed" if r["is_error"] else "done"
         else:
-            age = (now - ev.started_at).total_seconds()
-            if age > _STALE_AFTER_SEC:
-                ev.status = "stale"
-            else:
-                ev.status = "running"
+            ev.status = idle_status(ev.started_at, now, last_activity=last_activity)
 
     return events
 
