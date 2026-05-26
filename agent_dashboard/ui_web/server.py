@@ -78,7 +78,7 @@ def make_app() -> FastAPI:
 
     @app.get("/api/snapshot")
     async def snapshot():
-        return store.snapshot()
+        return store.snapshot(live=True)
 
     @app.get("/api/usage")
     async def usage():
@@ -94,7 +94,7 @@ def make_app() -> FastAPI:
         # 그걸 그대로 push 하면 클라이언트가 풀-DOM 재구축을 반복해 버벅임.
         DEBOUNCE_S = 0.25
         async def gen():
-            yield {"event": "snapshot", "data": json.dumps(store.snapshot())}
+            yield {"event": "snapshot", "data": json.dumps(store.snapshot(live=True))}
             while True:
                 if await request.is_disconnected():
                     break
@@ -104,7 +104,7 @@ def make_app() -> FastAPI:
                     # 윈도우 내에 도착한 후속 set 들을 흡수 — 마지막 상태만 보냄.
                     await asyncio.sleep(DEBOUNCE_S)
                     update_event.clear()
-                    yield {"event": "snapshot", "data": json.dumps(store.snapshot())}
+                    yield {"event": "snapshot", "data": json.dumps(store.snapshot(live=True))}
                 except asyncio.TimeoutError:
                     yield {"event": "ping", "data": ""}
 

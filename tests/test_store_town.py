@@ -74,6 +74,33 @@ def test_store_empty_events_default_tool_is_claude():
     assert snap["sessions"][0]["tool"] == "claude"
 
 
+def test_live_snapshot_trims_slugless_and_stale():
+    """live=True 는 UI 가 숨기는 세션(slug 없음 / 오래됨)을 제외. 기본 snapshot 은 전부 유지."""
+    now_dt = datetime(2026, 5, 13, 11, 0, 0, tzinfo=timezone.utc)
+    store = Store(now=lambda: now_dt)
+    # 최근 + slug — 10:00 활동, 1h 전 → live 유지
+    recent = parse_jsonl(
+        CLAUDE_SAMPLE, project_slug="-Users-x-p", project_cwd="/Users/x/p",
+        session_id="recent", now=now_dt,
+    )
+    store.update_transcript(Path("/Users/x/.claude/projects/-Users-x-p/recent.jsonl"), recent)
+    # 오래됨 + slug — 3일 전 → live 제외
+    old = parse_jsonl(
+        ['{"timestamp":"2026-05-10T10:00:00Z","message":{"content":[{"type":"tool_use","name":"Agent","id":"toolu_O","input":{"subagent_type":"x","description":"d","prompt":"p"}}]}}'],
+        project_slug="-Users-x-old", project_cwd="/Users/x/old", session_id="old", now=now_dt,
+    )
+    store.update_transcript(Path("/Users/x/.claude/projects/-Users-x-old/old.jsonl"), old)
+    # slug 없음 — live 제외
+    store.update_transcript(Path("/Users/x/.codex/sessions/2026/05/13/rollout-z.jsonl"), {}, tool="codex")
+
+    full_ids = {s["session_id"] for s in store.snapshot()["sessions"]}
+    live_ids = {s["session_id"] for s in store.snapshot(live=True)["sessions"]}
+    assert {"recent", "old", "rollout-z"} <= full_ids        # full 은 전부
+    assert "recent" in live_ids                              # 최근+slug 유지
+    assert "old" not in live_ids                             # 오래됨 제외
+    assert "rollout-z" not in live_ids                       # slug 없음 제외
+
+
 def test_store_snapshot_marks_idle_running_event_orphaned():
     lines = [
         '{"timestamp":"2026-05-13T10:00:00Z","message":{"content":[{"type":"tool_use","name":"Agent","id":"toolu_idle","input":{"subagent_type":"explorer","description":"find files","prompt":"go look"}}]}}'

@@ -11,6 +11,10 @@ from .parser import display_project_name, idle_status
 
 log = logging.getLogger(__name__)
 
+# live 스냅샷(HTTP/SSE)용 트림 — UI 가 안 보여주는 것은 전송하지 않아 페이로드/렉 절감.
+_LIVE_RECENT_SEC = 2 * 3600  # UI 는 1h 내만 표시; 서버는 여유 있게 2h 전송
+_LIVE_EVENT_CAP = 60         # 거대 세션 events 폭주 방지 (UI 는 events 를 펫으로 집계)
+
 
 class Store:
     """Thread-safe in-memory store for transcript events + wt-status entries."""
@@ -78,26 +82,42 @@ class Store:
             self._wt = entries
         self._notify()
 
-    def snapshot(self) -> dict:
+    def snapshot(self, *, live: bool = False) -> dict:
+        """전체 스냅샷. `live=True` 면 UI 가 실제 표시하는 것만 트림해서 반환
+        (slug 없음 / 오래됨 세션 제외 + 세션당 events 상한) — HTTP/SSE 페이로드 절감.
+        `live=False`(기본) 는 전체 — 내부/테스트용으로 동작 불변.
+        """
         now = self._now()
         with self._lock:
             sessions = []
             for sid, evs in self._transcript.items():
                 meta = self._session_meta.get(sid, {})
+                slug = meta.get("project_slug", "")
                 last_activity = meta.get("last_activity")
+                if live:
+                    # UI 는 slug 없는 / 1h 초과 세션을 숨김 → 아예 전송 안 함.
+                    if not slug:
+                        continue
+                    if last_activity is not None and (
+                        now - last_activity
+                    ).total_seconds() > _LIVE_RECENT_SEC:
+                        continue
+                ev_iter = evs.values()
+                if live and len(evs) > _LIVE_EVENT_CAP:
+                    ev_iter = sorted(
+                        evs.values(), key=lambda e: e.started_at, reverse=True
+                    )[:_LIVE_EVENT_CAP]
                 sessions.append(
                     {
                         "session_id": sid,
-                        "project_slug": meta.get("project_slug", ""),
+                        "project_slug": slug,
                         "project_cwd": meta.get("project_cwd", ""),
-                        "project_display": display_project_name(meta.get("project_slug", "")),
+                        "project_display": display_project_name(slug),
                         "tool": meta.get("tool", "claude"),
-                        "last_activity": meta.get(
-                            "last_activity", now
-                        ).isoformat(),
+                        "last_activity": (last_activity or now).isoformat(),
                         "events": [
                             self._event_dict(e, now=now, last_activity=last_activity)
-                            for e in evs.values()
+                            for e in ev_iter
                         ],
                     }
                 )

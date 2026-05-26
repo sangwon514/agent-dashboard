@@ -1,7 +1,6 @@
 """Standalone tests for core.parser. Run via: python3 -m unittest tests.test_parser"""
 from __future__ import annotations
 
-import json
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
