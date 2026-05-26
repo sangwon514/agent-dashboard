@@ -36,7 +36,8 @@ class JsonlWatcher:
     `on_change(path, events)`. Each AgentEvent carries `tool` so downstream can
     group by town.
 
-    Whole-file re-parse keeps the code simple. Append-only logs parse in ms.
+    Tracks per-file read offsets so append-only updates only parse new lines.
+    Truncation resets the offset to 0 and falls back to a whole-file parse.
     """
 
     def __init__(self, on_change: Callable[[Path, dict[str, AgentEvent], str], None]):
@@ -45,6 +46,9 @@ class JsonlWatcher:
         self._observer = Observer()
         self._lock = Lock()
         self._started = False
+        self._events_by_path: dict[Path, dict[str, AgentEvent]] = {}
+        self._offsets: dict[Path, int] = {}
+        self._offset_owner = getattr(on_change, "__self__", None)
 
     def start(self) -> None:
         if self._started:
@@ -99,42 +103,105 @@ class JsonlWatcher:
                 return
             path = parent_path
         try:
-            with path.open("r", encoding="utf-8", errors="replace") as f:
-                if tool == "claude":
-                    # Claude: project_slug = parent dir, session_id = file stem
-                    events = parser(
-                        f,
-                        project_slug=path.parent.name,
-                        project_cwd=str(path.parent),
-                        session_id=path.stem,
-                    )
-                elif tool == "codex":
-                    # Codex: parser 가 session_meta 에서 자동 추출 (인자 비우면 됨).
-                    events = parser(f)
-                else:
-                    project_slug, session_id = _cursor_path_meta(path, _root)
-                    if _is_cursor_main_transcript(path, _root):
-                        events = parse_cursor_session(
-                            f,
-                            _cursor_subagent_files(path),
-                            project_slug=project_slug,
-                            session_id=session_id,
-                        )
-                    else:
-                        events = parser(
-                            f,
-                            project_slug=project_slug,
-                            session_id=session_id,
-                        )
+            if tool == "cursor":
+                # Cursor main/subagent merge is session-shaped, not append-shaped.
+                lines, new_offset = _read_all_lines(path)
+                full_read = True
+            else:
+                lines, new_offset, full_read = self._read_changed_lines(path)
+                if not lines and not full_read:
+                    return
+                if not full_read and _has_completion_marker(tool, lines):
+                    lines, new_offset = _read_all_lines(path)
+                    full_read = True
+            events = self._parse_lines(path, _root, tool, parser, lines)
+            if not full_read and not events:
+                lines, new_offset = _read_all_lines(path)
+                full_read = True
+                events = self._parse_lines(path, _root, tool, parser, lines)
+            path_key = _path_key(path)
             with self._lock:
+                if full_read:
+                    merged = events
+                else:
+                    merged = dict(self._events_by_path.get(path_key, {}))
+                    merged.update(events)
+                self._events_by_path[path_key] = merged
+                self._set_offset(path_key, new_offset)
                 # on_change 시그니처가 historical 으로 (path, events) — tool 은 events
                 # 의 첫 sample 이나 path root 로 추론 가능하지만, 빈 events 의 경우
                 # 명시 전달이 필요. on_change 가 dict.get('tool') 같은 형태로 받게
                 # 하는 대신 thread-local 로 우회하지 않고 events 메타로 우회.
                 # Codex parser 는 빈 events 도 tool="codex" 정보를 잃지 않게 메타 활용.
-                self.on_change(path, events, tool)
+                self.on_change(path, merged, tool)
         except (OSError, IOError) as e:
             log.debug("reparse failed for %s: %s", path, e)
+
+    def _parse_lines(
+        self,
+        path: Path,
+        root: Path,
+        tool: str,
+        parser: Callable,
+        lines: list[str],
+    ) -> dict[str, AgentEvent]:
+        if tool == "claude":
+            # Claude: project_slug = parent dir, session_id = file stem
+            return parser(
+                lines,
+                project_slug=path.parent.name,
+                project_cwd=str(path.parent),
+                session_id=path.stem,
+            )
+        if tool == "codex":
+            # Codex: parser 가 session_meta 에서 자동 추출 (인자 비우면 됨).
+            return parser(lines)
+        project_slug, session_id = _cursor_path_meta(path, root)
+        if _is_cursor_main_transcript(path, root):
+            return parse_cursor_session(
+                lines,
+                _cursor_subagent_files(path),
+                project_slug=project_slug,
+                session_id=session_id,
+            )
+        return parser(
+            lines,
+            project_slug=project_slug,
+            session_id=session_id,
+        )
+
+    def _read_changed_lines(self, path: Path) -> tuple[list[str], int, bool]:
+        size = path.stat().st_size
+        offset = self._get_offset(path)
+        full_read = size < offset
+        if full_read:
+            offset = 0
+        with path.open("rb") as f:
+            f.seek(offset)
+            data = f.read()
+        new_offset = offset + len(data)
+        if offset > 0 and data and not data.endswith(b"\n"):
+            last_newline = data.rfind(b"\n")
+            if last_newline == -1:
+                data = b""
+                new_offset = offset
+            else:
+                data = data[: last_newline + 1]
+                new_offset = offset + last_newline + 1
+        return _decode_lines(data), new_offset, full_read or offset == 0
+
+    def _get_offset(self, path: Path) -> int:
+        owner_get = getattr(self._offset_owner, "get_transcript_offset", None)
+        if owner_get is not None:
+            return owner_get(path)
+        return self._offsets.get(_path_key(path), 0)
+
+    def _set_offset(self, path: Path, offset: int) -> None:
+        owner_set = getattr(self._offset_owner, "set_transcript_offset", None)
+        if owner_set is not None:
+            owner_set(path, offset)
+        else:
+            self._offsets[_path_key(path)] = offset
 
 
 class _JsonlHandler(FileSystemEventHandler):
@@ -218,3 +285,27 @@ def _cursor_subagent_files(path: Path) -> list[tuple[str, list[str]]]:
             continue
         files.append((subagent_path.stem, lines))
     return files
+
+
+def _read_all_lines(path: Path) -> tuple[list[str], int]:
+    data = path.read_bytes()
+    return _decode_lines(data), len(data)
+
+
+def _decode_lines(data: bytes) -> list[str]:
+    return data.decode("utf-8", errors="replace").splitlines()
+
+
+def _has_completion_marker(tool: str, lines: list[str]) -> bool:
+    if tool == "claude":
+        return any('"tool_result"' in line for line in lines)
+    if tool == "codex":
+        return any('"function_call_output"' in line for line in lines)
+    return False
+
+
+def _path_key(path: Path) -> Path:
+    try:
+        return path.resolve()
+    except OSError:
+        return path

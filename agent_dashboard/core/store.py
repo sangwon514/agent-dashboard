@@ -23,6 +23,7 @@ class Store:
         self._lock = Lock()
         self._transcript: dict[str, dict[str, AgentEvent]] = {}
         self._session_meta: dict[str, dict] = {}
+        self._offsets: dict[Path, int] = {}
         self._wt: dict[str, WtStatusEntry] = {}
         self._subs: list[Callable[[], None]] = []
         self._now = now or (lambda: datetime.now(timezone.utc))
@@ -37,6 +38,14 @@ class Store:
                 fn()
             except Exception as exc:
                 log.debug("subscriber raised: %s", exc)
+
+    def get_transcript_offset(self, path: Path) -> int:
+        with self._lock:
+            return self._offsets.get(_path_key(path), 0)
+
+    def set_transcript_offset(self, path: Path, offset: int) -> None:
+        with self._lock:
+            self._offsets[_path_key(path)] = offset
 
     def update_transcript(
         self,
@@ -170,3 +179,10 @@ class Store:
             "tasks": [{"name": t.name, "status": t.status} for t in w.tasks],
             "updated_at": w.updated_at.isoformat() if w.updated_at else None,
         }
+
+
+def _path_key(path: Path) -> Path:
+    try:
+        return path.resolve()
+    except OSError:
+        return path
