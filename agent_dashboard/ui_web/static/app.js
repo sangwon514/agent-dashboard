@@ -8,6 +8,8 @@ const conn = document.getElementById('conn');
 let lastSnap = null;
 let openDetail = null; // tool_use_id
 let settingsOpen = false;
+let lobbySearchQuery = '';
+let lobbyFilterActive = false;
 
 // ── 펫 커스터마이즈 (localStorage) ──────────────────────────────
 const PET_CONFIG_KEY = 'agentville.pet-config.v1';
@@ -3153,15 +3155,40 @@ function renderLobby(snap) {
     return (sb.last_activity || '').localeCompare(sa.last_activity || '');
   });
 
-  if (keys.length === 0) {
-    return `<div class="lobby-empty">
+  const filteredKeys = keys.filter(k => {
+    if (lobbyFilterActive && projectStats(grouped[k]).busy === 0) return false;
+    if (lobbySearchQuery && !k.toLowerCase().includes(lobbySearchQuery.toLowerCase())) return false;
+    return true;
+  });
+
+  const lobbyControls = `
+    <div class="lobby-controls">
+      <input type="text" class="lobby-search" id="lobby-search"
+             placeholder="/ 검색…" value="${escapeHtml(lobbySearchQuery)}"
+             aria-label="프로젝트 검색">
+      <button class="lobby-filter-btn${lobbyFilterActive ? ' active' : ''}" id="lobby-filter-btn"
+              title="f: 활성 방만 보기">
+        ${lobbyFilterActive ? '● 활성만' : '○ 전체'}
+      </button>
+    </div>`;
+
+  if (filteredKeys.length === 0 && keys.length === 0) {
+    return `${lobbyControls}<div class="lobby-empty">
       <div class="big">🌙</div>
       <div>마을이 조용해요.</div>
       <div class="muted">최근 1시간 안에 활동한 집이 없습니다. Claude Code 세션이 시작되면 마을에 집이 생겨요.</div>
     </div>`;
   }
 
-  const cards = keys.map(k => {
+  if (filteredKeys.length === 0) {
+    return `${lobbyControls}<div class="lobby-empty">
+      <div class="big">🔍</div>
+      <div>검색 결과가 없어요.</div>
+      <div class="muted">"${escapeHtml(lobbySearchQuery || '')}" 에 해당하는 프로젝트가 없습니다.</div>
+    </div>`;
+  }
+
+  const cards = filteredKeys.map(k => {
     const sessions = grouped[k];
     const stats = projectStats(sessions);
     // 미리보기 펫: 모든 세션의 펫 중 일하는 펫 우선, 호출 많은 순.
@@ -3264,7 +3291,7 @@ function renderLobby(snap) {
     <div class="cloud-small-deco vb cloud" style="left:60%; top:14%; animation-duration:80s; animation-direction:reverse;">${renderSprite('cloud-small', 1)}</div>
   </div>`;
   // humanoid 는 이제 각 card 내부 .card-occupant 에 렌더 — 카드 발치에 자리잡음.
-  return `<div class="lobby-wrap">${villageBg}<div class="rooms">${cards}</div></div>`;
+  return `<div class="lobby-wrap">${villageBg}${lobbyControls}<div class="rooms">${cards}</div></div>`;
 }
 
 // ── 일별 시간대 히스토그램 ────────────────────────────────────────
@@ -4208,6 +4235,22 @@ function _renderImpl(snap) {
     if (sceneEl) attachSceneDrag(sceneEl, room);
   }
 
+  // 로비 검색창 / 필터 버튼
+  const _searchInput = root.querySelector('#lobby-search');
+  if (_searchInput) {
+    _searchInput.addEventListener('input', (e) => {
+      lobbySearchQuery = e.target.value;
+      render(lastSnap);
+    });
+  }
+  const _filterBtn = root.querySelector('#lobby-filter-btn');
+  if (_filterBtn) {
+    _filterBtn.addEventListener('click', () => {
+      lobbyFilterActive = !lobbyFilterActive;
+      render(lastSnap);
+    });
+  }
+
   root.querySelectorAll('.room-card').forEach(card => {
     card.addEventListener('click', () => {
       navigateToRoom(card.dataset.key);
@@ -4262,6 +4305,37 @@ function connect() {
 }
 
 window.addEventListener('hashchange', () => { openDetail = null; render(lastSnap); });
+
+// ── 키보드 단축키 ────────────────────────────────────────────────
+// / → 검색창 포커스 · f → 필터 토글 · Esc → expanded 패널 닫기
+// input/textarea 포커스 중엔 Esc 외 단축키 무시
+document.addEventListener('keydown', (e) => {
+  const tag = document.activeElement?.tagName?.toLowerCase();
+  const inInput = tag === 'input' || tag === 'textarea' || document.activeElement?.isContentEditable;
+
+  if (e.key === 'Escape') {
+    if (openDetail) { openDetail = null; render(lastSnap); return; }
+    if (settingsOpen) { window.closeSettings?.(); return; }
+    if (lobbySearchQuery) { lobbySearchQuery = ''; render(lastSnap); return; }
+    return;
+  }
+
+  if (inInput) return;
+
+  if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault();
+    const searchEl = document.getElementById('lobby-search');
+    if (searchEl) searchEl.focus();
+    return;
+  }
+
+  if (e.key === 'f' && !e.ctrlKey && !e.metaKey && !currentRoom()) {
+    lobbyFilterActive = !lobbyFilterActive;
+    render(lastSnap);
+    return;
+  }
+});
+
 // 시간 기반 필터(30초 잔잔, 1시간 윈도우)가 자연스럽게 사라지게 하려면
 // 데이터 변경이 없어도 주기적으로 다시 그려야 함.
 mountIcons(); // 정적 header chrome (brand-house, cog) 초기 마운트

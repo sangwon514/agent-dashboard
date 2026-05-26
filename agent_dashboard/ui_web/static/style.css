@@ -1796,6 +1796,49 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
 }
 
 /* ── 마을 배경 — 로비 풍경 ─────────────────────────── */
+/* ── 로비 검색 / 필터 컨트롤 ───────────────────────────────────── */
+.lobby-controls {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px 0;
+}
+.lobby-search {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  font-size: 12px;
+  font-family: inherit;
+  padding: 4px 10px;
+  width: 180px;
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+.lobby-search:focus {
+  border-color: var(--accent);
+  background: rgba(255,255,255,0.8);
+}
+.lobby-filter-btn {
+  background: rgba(255,255,255,0.45);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-family: inherit;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.lobby-filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+.lobby-filter-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
 .lobby-wrap { position: relative; min-height: 80vh; }
 .village-bg {
   position: absolute; inset: 0;
