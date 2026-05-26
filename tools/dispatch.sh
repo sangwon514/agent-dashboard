@@ -42,8 +42,8 @@ EOF
 echo "▶ [$TOOL] dispatch 시작 → 로그: $LOG" >&2
 set +e
 case "$TOOL" in
-  codex)  codex exec -C "$ROOT" -s workspace-write "$PROMPT" 2>&1 | tee "$LOG"; rc=${PIPESTATUS[0]};;
-  cursor) ( cd "$ROOT" && cursor-agent -p --force --output-format text "$PROMPT" ) 2>&1 | tee "$LOG"; rc=${PIPESTATUS[0]};;
+  codex)  codex exec -C "$ROOT" -s workspace-write "$PROMPT" </dev/null 2>&1 | tee "$LOG"; rc=${PIPESTATUS[0]};;
+  cursor) ( cd "$ROOT" && cursor-agent -p --force --output-format text "$PROMPT" </dev/null ) 2>&1 | tee "$LOG"; rc=${PIPESTATUS[0]};;
 esac
 set -e
 

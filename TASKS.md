@@ -34,7 +34,7 @@
 - **내용**: `/` 검색창 포커스 · `f` 필터 토글 · `Esc` expanded 패널 닫기.
 - **수용**: `python3 -m agent_dashboard serve` 띄워 동작 확인. **input/textarea 포커스 중엔 단축키 무시.**
 
-### U2 · dark/light 테마 토글 (ROADMAP P7-6) 🔵 (cursor 자율 dispatch)
+### U2 · dark/light 테마 토글 (ROADMAP P7-6) ⏸ blocked — cursor headless 인증(CURSOR_API_KEY) 필요
 - **파일**: `style.css`, `app.js`, `index.html`(토글 버튼)
 - **내용**: CSS 변수 기반 light 테마 추가 + 토글, `localStorage` 보존. 현재 dark 고정.
 - **수용**: 토글→새로고침해도 유지. **Agentville 픽셀 펫-키퍼 미감 유지(카드/테이블/RPG 금지).**
