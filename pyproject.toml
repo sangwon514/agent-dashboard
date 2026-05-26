@@ -28,3 +28,8 @@ include = ["agent_dashboard*"]
 
 [tool.setuptools.package-data]
 agent_dashboard = ["ui_web/static/*"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+]
