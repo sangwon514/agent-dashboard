@@ -48,13 +48,15 @@ esac
 set -e
 
 # 쿼터/토큰 소진 감지 → 머리가 분기할 수 있게 마커 출력 (COLLAB.md 토큰 소진 대응)
-QUOTA_RE='rate.?limit|quota|usage limit|too many requests|\b429\b|limit reached|insufficient|out of (credit|token)|exhaust|일일 한도|한도를 초과'
-if grep -qiE "$QUOTA_RE" "$LOG" 2>/dev/null; then
-  RESULT=quota_exhausted
-elif [ "${rc:-0}" -ne 0 ]; then
-  RESULT=error
-else
+# rc=0 이면 성공(ok) — 정상 출력에 'limit/rate' 등이 섞여도 오탐 금지.
+# 실패(rc!=0)일 때만 쿼터 패턴으로 quota_exhausted vs error 구분.
+QUOTA_RE='rate.?limit|quota exceeded|usage limit|too many requests|\b429\b|limit reached|out of (credit|token)|일일 한도|한도를 초과'
+if [ "${rc:-0}" -eq 0 ]; then
   RESULT=ok
+elif grep -qiE "$QUOTA_RE" "$LOG" 2>/dev/null; then
+  RESULT=quota_exhausted
+else
+  RESULT=error
 fi
 echo "DISPATCH_RESULT=$RESULT rc=${rc:-0} TOOL=$TOOL LOG=$LOG" >&2
 echo "✓ [$TOOL] 완료(result=$RESULT) → $LOG  (머리: git diff 리뷰 후 커밋 / quota 면 폴백)" >&2
