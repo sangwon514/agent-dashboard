@@ -74,6 +74,19 @@ def test_store_empty_events_default_tool_is_claude():
     assert snap["sessions"][0]["tool"] == "claude"
 
 
+def test_store_health_collects_parse_failures_by_tool():
+    store = Store()
+    events = parse_jsonl(["not json"], project_slug="p", project_cwd="/p", session_id="s")
+
+    store.update_transcript(Path("/x/s.jsonl"), events, tool="claude")
+
+    assert store.health()["parse_failures"] == {
+        "claude": 1,
+        "codex": 0,
+        "cursor": 0,
+    }
+
+
 def test_live_snapshot_trims_slugless_and_stale():
     """live=True 는 UI 가 숨기는 세션(slug 없음 / 오래됨)을 제외. 기본 snapshot 은 전부 유지."""
     now_dt = datetime(2026, 5, 13, 11, 0, 0, tzinfo=timezone.utc)

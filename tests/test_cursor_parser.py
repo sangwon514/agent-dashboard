@@ -88,6 +88,30 @@ def test_parse_cursor_timestamp_falls_back_to_now():
     assert events["sid"].started_at == now
 
 
+def test_cursor_parse_failures_count_broken_jsonl_lines():
+    events = parse_cursor_jsonl(
+        [
+            "not json",
+            '{"role":"user","message":{"content":[{"type":"text","text":"Hi"}]}}',
+        ],
+        project_slug="Users-x-project",
+        session_id="sid",
+    )
+
+    assert events.parse_failures == 1
+
+
+def test_cursor_session_sums_subagent_parse_failures():
+    events = parse_cursor_session(
+        ['{"role":"user","message":{"content":[{"type":"text","text":"Hi"}]}}'],
+        [("child.jsonl", ["not json"])],
+        project_slug="Users-x-project",
+        session_id="sid",
+    )
+
+    assert events.parse_failures == 1
+
+
 def test_cursor_path_meta_extracts_slug_and_subagent_session():
     root = Path("/Users/me/.cursor/projects")
     main = root / "Users-me-proj" / "agent-transcripts" / "abc" / "abc.jsonl"

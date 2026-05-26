@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from typing import Iterable
 
 from .model import AgentEvent
+from .parser import ParsedEvents
 
 _STALE_AFTER_SEC = 600
 
@@ -94,7 +95,7 @@ def parse_codex_jsonl(
     project_slug: str = "",
     session_id: str = "",
     now: datetime | None = None,
-) -> dict[str, AgentEvent]:
+) -> ParsedEvents:
     """Codex rollout JSONL → call_id → AgentEvent.
 
     `session_meta` (첫 줄) 에서 cwd / id 자동 추출. 인자로 명시하면 그게 우선.
@@ -103,8 +104,9 @@ def parse_codex_jsonl(
     Defensive: 알 수 없는 type / 필드 shape 는 무시.
     """
     now = now or datetime.now(timezone.utc)
-    events: dict[str, AgentEvent] = {}
+    events = ParsedEvents()
     outputs: dict[str, dict] = {}
+    parse_failures = 0
 
     meta_cwd = ""
     meta_session = ""
@@ -117,6 +119,7 @@ def parse_codex_jsonl(
         try:
             d = json.loads(raw)
         except json.JSONDecodeError:
+            parse_failures += 1
             continue
 
         ts = _parse_ts(d.get("timestamp"))
@@ -189,4 +192,5 @@ def parse_codex_jsonl(
             age = (now - ev.started_at).total_seconds()
             ev.status = "stale" if age > _STALE_AFTER_SEC else "running"
 
+    events.parse_failures = parse_failures
     return events

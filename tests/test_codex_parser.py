@@ -86,6 +86,15 @@ def test_unknown_lines_ignored():
     ]
     events = parse_codex_jsonl(junk + _load(), now=datetime(2026, 5, 13, 3, 0, 0, tzinfo=timezone.utc))
     assert len(events) == 3
+    assert events.parse_failures == 1
+
+
+def test_valid_lines_report_zero_parse_failures():
+    events = parse_codex_jsonl(
+        ['{"type":"response_item","payload":{"type":"reasoning"}}'],
+        now=datetime(2026, 5, 13, 3, 0, 0, tzinfo=timezone.utc),
+    )
+    assert events.parse_failures == 0
 
 
 def test_explicit_overrides_win():

@@ -52,6 +52,14 @@ class ParseJsonlTests(unittest.TestCase):
     def test_garbage_lines_ignored(self):
         # garbage line + non-list content line 이 있어도 위 3개는 정상 추출
         self.assertEqual(len(self.events), 3)
+        self.assertEqual(self.events.parse_failures, 1)
+
+    def test_valid_lines_report_zero_parse_failures(self):
+        lines = [
+            '{"timestamp":"2026-05-08T01:00:00Z","message":{"content":[]}}',
+        ]
+        evs = parse_jsonl(lines, project_slug="t", project_cwd="/", session_id="s")
+        self.assertEqual(evs.parse_failures, 0)
 
     def test_stale_after_timeout(self):
         # 11분 후 시점이면 tu-004 는 stale

@@ -10,6 +10,12 @@ _STALE_AFTER_SEC = 600
 _ORPHANED_AFTER_SEC = 1800
 
 
+class ParsedEvents(dict[str, AgentEvent]):
+    def __init__(self, *args, parse_failures: int = 0, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.parse_failures = parse_failures
+
+
 def _parse_ts(s: str | None) -> datetime:
     if not s:
         return datetime.now(timezone.utc)
@@ -43,16 +49,17 @@ def parse_jsonl(
     project_cwd: str,
     session_id: str,
     now: datetime | None = None,
-) -> dict[str, AgentEvent]:
+) -> ParsedEvents:
     """Return tool_use_id -> AgentEvent.
 
     Defensive: only requires `message.content[]` + `tool_use`/`tool_result`.
     Any other field shape is ignored.
     """
     now = now or datetime.now(timezone.utc)
-    events: dict[str, AgentEvent] = {}
+    events = ParsedEvents()
     results: dict[str, dict] = {}
     last_activity: datetime | None = None
+    parse_failures = 0
 
     for raw in lines:
         raw = raw.strip()
@@ -61,6 +68,7 @@ def parse_jsonl(
         try:
             d = json.loads(raw)
         except json.JSONDecodeError:
+            parse_failures += 1
             continue
 
         msg = d.get("message")
@@ -120,6 +128,7 @@ def parse_jsonl(
         else:
             ev.status = idle_status(ev.started_at, now, last_activity=last_activity)
 
+    events.parse_failures = parse_failures
     return events
 
 

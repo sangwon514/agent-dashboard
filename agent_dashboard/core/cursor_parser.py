@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from typing import Iterable
 
 from .model import AgentEvent
-from .parser import idle_status
+from .parser import ParsedEvents, idle_status
 
 _TIMESTAMP_PAT = re.compile(r"<timestamp>\s*(.*?)\s*</timestamp>", re.I | re.S)
 
@@ -45,7 +45,7 @@ def parse_cursor_jsonl(
     project_slug: str = "",
     session_id: str = "",
     now: datetime | None = None,
-) -> dict[str, AgentEvent]:
+) -> ParsedEvents:
     """Cursor transcript JSONL -> one representative AgentEvent per file.
 
     Cursor lines do not carry a top-level timestamp. The session timestamp is
@@ -58,6 +58,7 @@ def parse_cursor_jsonl(
     first_text = ""
     tool_names: list[str] = []
     saw_cursor_message = False
+    parse_failures = 0
 
     for raw in lines:
         raw = raw.strip()
@@ -66,6 +67,7 @@ def parse_cursor_jsonl(
         try:
             d = json.loads(raw)
         except json.JSONDecodeError:
+            parse_failures += 1
             continue
         if d.get("role") not in {"user", "assistant"}:
             continue
@@ -97,7 +99,7 @@ def parse_cursor_jsonl(
                     tool_names.append(name)
 
     if not saw_cursor_message:
-        return {}
+        return ParsedEvents(parse_failures=parse_failures)
 
     started_at = first_ts or now
     last_activity = last_ts or started_at
@@ -123,7 +125,7 @@ def parse_cursor_jsonl(
         tool="cursor",
     )
     setattr(event, "last_activity", last_activity)
-    return {tool_use_id: event}
+    return ParsedEvents({tool_use_id: event}, parse_failures=parse_failures)
 
 
 def parse_cursor_session(
@@ -133,7 +135,7 @@ def parse_cursor_session(
     project_slug: str = "",
     session_id: str = "",
     now: datetime | None = None,
-) -> dict[str, AgentEvent]:
+) -> ParsedEvents:
     """Parse a Cursor parent transcript plus subagent transcripts.
 
     Subagent JSONL files are represented as pet AgentEvents inside the parent
@@ -154,6 +156,7 @@ def parse_cursor_session(
             session_id=f"{session_id}/subagents/{tool_use_id}",
             now=now,
         )
+        events.parse_failures += sub_events.parse_failures
         if not sub_events:
             continue
         event = next(iter(sub_events.values()))

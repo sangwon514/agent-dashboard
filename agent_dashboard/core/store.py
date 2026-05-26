@@ -25,6 +25,11 @@ class Store:
         self._session_meta: dict[str, dict] = {}
         self._offsets: dict[Path, int] = {}
         self._wt: dict[str, WtStatusEntry] = {}
+        self._parse_failures: dict[str, int] = {
+            "claude": 0,
+            "codex": 0,
+            "cursor": 0,
+        }
         self._subs: list[Callable[[], None]] = []
         self._now = now or (lambda: datetime.now(timezone.utc))
 
@@ -76,6 +81,7 @@ class Store:
             ),
             default=self._now(),
         )
+        parse_failures = int(getattr(events, "parse_failures", 0) or 0)
         with self._lock:
             self._transcript[session_id] = events
             self._session_meta[session_id] = {
@@ -84,6 +90,10 @@ class Store:
                 "tool": tool,
                 "last_activity": last,
             }
+            if parse_failures:
+                self._parse_failures[tool] = (
+                    self._parse_failures.get(tool, 0) + parse_failures
+                )
         self._notify()
 
     def update_wt_status(self, entries: dict[str, WtStatusEntry]) -> None:
@@ -146,6 +156,7 @@ class Store:
             return {
                 "last_event_at": last.isoformat() if last else None,
                 "session_count": len(self._transcript),
+                "parse_failures": dict(self._parse_failures),
             }
 
     @staticmethod
