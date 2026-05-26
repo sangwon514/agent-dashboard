@@ -857,7 +857,9 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1
   content: "";
   position: absolute;
   left: 50%;
-  top: -10px;       /* 카드 바닥에 4px 정도 걸치도록 — 시각적 seam */
+  /* card-occupant 는 translateY(16px) 로 카드 바닥에서 16px 아래 → mat 을 top:-24px
+     올려 카드 하단 경계와 8px 정도 겹치게 = doorstep threshold. */
+  top: -24px;
   transform: translateX(-50%);
   width: 92px;
   height: 20px;

@@ -3935,7 +3935,10 @@ function renderSignpost(snap) {
     </button>`;
   };
   const TOWN_LABELS = { claude: 'Claude town', codex: 'Codex town', cursor: 'Cursor town' };
-  const tabs = VALID_TOWNS
+  // 비어있는 마을 (0 카운트) 은 숨김 — "transit hub" 가 아닌 마을 sign 미감.
+  // 단, 현재 진입한 마을은 0 이어도 visible 유지(돌아갈 경로 보존).
+  const visibleTowns = VALID_TOWNS.filter(t => (counts[t] || 0) > 0 || t === cur);
+  const tabs = visibleTowns
     .map(t => make(t, TOWN_LABELS[t] || t))
     .join('<span class="signpost-sep">·</span>');
   el.innerHTML = `
