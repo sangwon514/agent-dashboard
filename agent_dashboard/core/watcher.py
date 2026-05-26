@@ -11,7 +11,7 @@ from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers.polling import PollingObserver as Observer
 
 from .codex_parser import parse_codex_jsonl
-from .cursor_parser import parse_cursor_jsonl
+from .cursor_parser import parse_cursor_jsonl, parse_cursor_session
 from .model import AgentEvent
 from .parser import parse_jsonl
 
@@ -93,10 +93,11 @@ class JsonlWatcher:
         from fnmatch import fnmatch
         if not fnmatch(path.name, glob):
             return
-        # Cursor: subagents/*.jsonl 은 별도 세션이 아니라 부모 세션의 펫이어야 함 —
-        # 세션 카운트 부풀림 방지로 제외. (서브에이전트→펫 머지는 후속 과제.)
         if tool == "cursor" and "subagents" in path.parts:
-            return
+            parent_path = _cursor_parent_main_path(path, _root)
+            if parent_path is None:
+                return
+            path = parent_path
         try:
             with path.open("r", encoding="utf-8", errors="replace") as f:
                 if tool == "claude":
@@ -112,11 +113,19 @@ class JsonlWatcher:
                     events = parser(f)
                 else:
                     project_slug, session_id = _cursor_path_meta(path, _root)
-                    events = parser(
-                        f,
-                        project_slug=project_slug,
-                        session_id=session_id,
-                    )
+                    if _is_cursor_main_transcript(path, _root):
+                        events = parse_cursor_session(
+                            f,
+                            _cursor_subagent_files(path),
+                            project_slug=project_slug,
+                            session_id=session_id,
+                        )
+                    else:
+                        events = parser(
+                            f,
+                            project_slug=project_slug,
+                            session_id=session_id,
+                        )
             with self._lock:
                 # on_change 시그니처가 historical 으로 (path, events) — tool 은 events
                 # 의 첫 sample 이나 path root 로 추론 가능하지만, 빈 events 의 경우
@@ -167,3 +176,45 @@ def _cursor_path_meta(path: Path, root: Path) -> tuple[str, str]:
     if len(parts) >= 3 and parts[1] == "agent-transcripts":
         return project_slug, parts[2]
     return project_slug, path.stem
+
+
+def _is_cursor_main_transcript(path: Path, root: Path) -> bool:
+    try:
+        rel = path.relative_to(root)
+    except ValueError:
+        return False
+    parts = rel.parts
+    return (
+        len(parts) == 4
+        and parts[1] == "agent-transcripts"
+        and parts[3] == f"{parts[2]}.jsonl"
+    )
+
+
+def _cursor_parent_main_path(path: Path, root: Path) -> Path | None:
+    try:
+        rel = path.relative_to(root)
+    except ValueError:
+        return None
+    parts = rel.parts
+    if len(parts) != 5 or parts[1] != "agent-transcripts" or parts[3] != "subagents":
+        return None
+    candidate = root / parts[0] / "agent-transcripts" / parts[2] / f"{parts[2]}.jsonl"
+    return candidate if candidate.exists() else None
+
+
+def _cursor_subagent_files(path: Path) -> list[tuple[str, list[str]]]:
+    subagents_dir = path.parent / "subagents"
+    if not subagents_dir.is_dir():
+        return []
+    files: list[tuple[str, list[str]]] = []
+    for subagent_path in sorted(subagents_dir.glob("*.jsonl")):
+        try:
+            lines = subagent_path.read_text(
+                encoding="utf-8",
+                errors="replace",
+            ).splitlines()
+        except OSError:
+            continue
+        files.append((subagent_path.stem, lines))
+    return files

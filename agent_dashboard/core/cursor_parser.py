@@ -124,3 +124,42 @@ def parse_cursor_jsonl(
     )
     setattr(event, "last_activity", last_activity)
     return {tool_use_id: event}
+
+
+def parse_cursor_session(
+    main_lines: Iterable[str],
+    subagent_files: list[tuple[str, Iterable[str]]],
+    *,
+    project_slug: str = "",
+    session_id: str = "",
+    now: datetime | None = None,
+) -> dict[str, AgentEvent]:
+    """Parse a Cursor parent transcript plus subagent transcripts.
+
+    Subagent JSONL files are represented as pet AgentEvents inside the parent
+    session, keyed by the subagent file stem.
+    """
+    now = now or datetime.now(timezone.utc)
+    events = parse_cursor_jsonl(
+        main_lines,
+        project_slug=project_slug,
+        session_id=session_id,
+        now=now,
+    )
+    for name, lines in subagent_files:
+        tool_use_id = name.removesuffix(".jsonl")
+        sub_events = parse_cursor_jsonl(
+            lines,
+            project_slug=project_slug,
+            session_id=f"{session_id}/subagents/{tool_use_id}",
+            now=now,
+        )
+        if not sub_events:
+            continue
+        event = next(iter(sub_events.values()))
+        event.session_id = session_id
+        event.tool_use_id = tool_use_id
+        event.subagent_type = "cursor-agent"
+        event.tool = "cursor"
+        events[tool_use_id] = event
+    return events
