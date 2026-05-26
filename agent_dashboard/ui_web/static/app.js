@@ -11,6 +11,22 @@ let settingsOpen = false;
 let lobbySearchQuery = '';
 let lobbyFilterActive = false;
 
+// ── 테마 (light=양피지 기본 / dark cozy 팔레트) (localStorage) ──────────
+const THEME_KEY = 'agentville.theme.v1';
+function loadTheme() { try { return localStorage.getItem(THEME_KEY) || 'light'; } catch { return 'light'; } }
+function applyTheme(t) {
+  if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+  else document.documentElement.removeAttribute('data-theme');
+  const btn = document.getElementById('theme-toggle');
+  if (btn) btn.textContent = (t === 'dark') ? '☾' : '☀';
+}
+window.toggleTheme = function () {
+  const next = (loadTheme() === 'dark') ? 'light' : 'dark';
+  try { localStorage.setItem(THEME_KEY, next); } catch {}
+  applyTheme(next);
+};
+applyTheme(loadTheme());
+
 // ── 펫 커스터마이즈 (localStorage) ──────────────────────────────
 const PET_CONFIG_KEY = 'agentville.pet-config.v1';
 let petConfig = (() => {

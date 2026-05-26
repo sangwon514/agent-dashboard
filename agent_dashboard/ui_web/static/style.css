@@ -39,6 +39,26 @@
   --floor-color-2: #5a5365;
   --ambient-tint: rgba(80, 90, 150, .15);
 }
+/* dark 테마 — cozy 다크 팔레트. tod 블록 뒤에 둬서 공유 var 는 dark 가 우선.
+   off-by-default(토글), 기본은 양피지(light) 유지. */
+:root[data-theme="dark"] {
+  --bg: #1f1b16;
+  --bg-2: #2a241c;
+  --panel: #2b251d;
+  --line: #4a3f2c;
+  --ink: #ece0c8;
+  --muted: #a8966f;
+  --accent: #d2723a;
+  --good: #7bae5e;
+  --warn: #e0b048;
+  --bad:  #d8584e;
+  --gold: #d4b35a;
+  --shadow: 0 1px 0 rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.45);
+  --wall-color:  #2c3140;
+  --floor-color: #3a3550;
+  --floor-color-2: #322d44;
+  --ambient-tint: rgba(60, 70, 110, .12);
+}
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
