@@ -24,3 +24,17 @@
 - 변경 파일 + 검증 결과(어떤 테스트/lint 를 돌렸고 통과했는지)를 commit message 또는 응답에 명시.
 - 회귀 위험·미해결 항목이 있으면 명시.
 - 컨셉·구조를 바꿨다면 관련 SSOT 문서(DESIGN/ROADMAP/README)도 같은 커밋에서 갱신.
+
+## 🚧 동시 작업 충돌 방지 정책
+
+Codex 와 Cursor 가 **동시에** 일할 수 있으므로, 충돌을 사후 해결이 아니라 **원천 차단**한다.
+
+1. **파일 도메인 분리 (1차 방어 — 가장 중요).** 두 손의 작업 영역을 disjoint 하게 고정한다:
+   - **Cursor →** `agent_dashboard/ui_web/static/**` (`app.js` · `style.css` · `index.html`) **만**.
+   - **Codex →** Python (`agent_dashboard/**/*.py` · `tests/**`) **만**.
+   - 두 집합은 겹치지 않으므로 같은 파일을 동시에 만질 일이 없다. (기존 `frontend-dev`=static / Python=백엔드 역할 분리와 동일 원칙.)
+2. **한 파일 한 주인.** 머리(Claude Code)가 배정할 때 같은 파일을 두 도구에 동시에 주지 않는다.
+3. **같은 `main` + disjoint 파일이면 브랜치 없이도 안전.** 1인 로컬이라 원격 push 경쟁이 없다 — 도메인만 분리돼 있으면 순차 커밋으로 충돌이 안 난다. 작업 단위는 잘게, **끝나면 즉시 커밋**. 더 깔끔한 히스토리를 원하면 `codex/<slug>` · `cursor/<slug>` 브랜치 후 머리가 머지(도메인 disjoint 라 머지 충돌 ≈ 0).
+4. **경계 파일은 직렬화(병렬 금지).** 두 도메인이 만나는 파일을 둘 다 건드려야 하는 작업은 머리가 한 도구씩 순서대로 배정한다: `pyproject.toml`, `server.py` 의 static 서빙 부분 등. (`index.html` 은 static 이라 Cursor 전담 — Codex 는 손대지 않는다.)
+5. **백엔드↔프론트 의존 작업은 머리가 분해.** "API 필드 추가(Codex) + 그 표시(Cursor)" 처럼 엮인 건 병렬 금지 — 한쪽 먼저 끝내고 순서대로. 서로 독립인 작업만 병렬로 돌린다.
+6. **현재 점유는 [`TASKS.md`](./TASKS.md) 가 표시.** 손은 자기 lane 항목만 집고, 시작 시 🔵in-progress / 완료 시 ✅done 으로 갱신해 다른 손이 점유 상태를 본다.
