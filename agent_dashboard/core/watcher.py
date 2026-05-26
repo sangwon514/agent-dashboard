@@ -11,6 +11,7 @@ from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers.polling import PollingObserver as Observer
 
 from .codex_parser import parse_codex_jsonl
+from .cursor_parser import parse_cursor_jsonl
 from .model import AgentEvent
 from .parser import parse_jsonl
 
@@ -18,12 +19,14 @@ log = logging.getLogger(__name__)
 
 CLAUDE_PROJECTS_DIR = Path.home() / ".claude" / "projects"
 CODEX_SESSIONS_DIR = Path.home() / ".codex" / "sessions"
+CURSOR_PROJECTS_DIR = Path.home() / ".cursor" / "projects"
 
 # (root_dir, tool_name, parser_callable, file_glob) — 새 source 추가 시 한 줄.
 # parser 시그니처는 동일: (lines, *, project_slug, session_id, now) → dict[str, AgentEvent]
 WATCH_ROOTS: list[tuple[Path, str, Callable, str]] = [
     (CLAUDE_PROJECTS_DIR, "claude", parse_jsonl, "*.jsonl"),
     (CODEX_SESSIONS_DIR, "codex", parse_codex_jsonl, "rollout-*.jsonl"),
+    (CURSOR_PROJECTS_DIR, "cursor", parse_cursor_jsonl, "*.jsonl"),
 ]
 
 
@@ -100,9 +103,16 @@ class JsonlWatcher:
                         project_cwd=str(path.parent),
                         session_id=path.stem,
                     )
-                else:
+                elif tool == "codex":
                     # Codex: parser 가 session_meta 에서 자동 추출 (인자 비우면 됨).
                     events = parser(f)
+                else:
+                    project_slug, session_id = _cursor_path_meta(path, _root)
+                    events = parser(
+                        f,
+                        project_slug=project_slug,
+                        session_id=session_id,
+                    )
             with self._lock:
                 # on_change 시그니처가 historical 으로 (path, events) — tool 은 events
                 # 의 첫 sample 이나 path root 로 추론 가능하지만, 빈 events 의 경우
@@ -137,3 +147,19 @@ class _JsonlHandler(FileSystemEventHandler):
         if event.is_directory:
             return
         self._maybe_reparse(getattr(event, "dest_path", event.src_path))
+
+
+def _cursor_path_meta(path: Path, root: Path) -> tuple[str, str]:
+    try:
+        rel = path.relative_to(root)
+    except ValueError:
+        return "", path.stem
+    parts = rel.parts
+    if not parts:
+        return "", path.stem
+    project_slug = parts[0]
+    if len(parts) >= 5 and parts[1] == "agent-transcripts" and parts[3] == "subagents":
+        return project_slug, f"{parts[2]}/subagents/{path.stem}"
+    if len(parts) >= 3 and parts[1] == "agent-transcripts":
+        return project_slug, parts[2]
+    return project_slug, path.stem

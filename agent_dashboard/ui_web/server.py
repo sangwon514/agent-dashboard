@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from sse_starlette.sse import EventSourceResponse
 
 from ..core.codex_usage import read_codex_usage
+from ..core.cursor_usage import read_cursor_usage
 from ..core.store import Store
 from ..core.usage import read_claude_usage
 from ..core.watcher import JsonlWatcher
@@ -83,7 +84,8 @@ def make_app() -> FastAPI:
     async def usage():
         # codex_usage 는 subprocess + 180s 캐시 — async loop 블로킹 회피를 위해 threadpool 위임
         codex = await asyncio.to_thread(read_codex_usage)
-        return {"claude": read_claude_usage(), "codex": codex}
+        cursor = await asyncio.to_thread(read_cursor_usage)
+        return {"claude": read_claude_usage(), "codex": codex, "cursor": cursor}
 
     @app.get("/api/stream")
     async def stream(request: Request):

@@ -25,7 +25,7 @@
 - **내용**: 파일별 `last_offset` 추적 → 변경분만 파싱(매번 전체 재파싱 회피).
 - **수용**: 기존 파서 테스트 전부 PASS + offset 재사용 단위테스트. 대용량 세션 CPU 절감.
 
-### C4 · Cursor town 백엔드 (신규 피처) 🔵 (codex 자율 dispatch)
+### C4 · Cursor town 백엔드 (신규 피처) ✅ (codex dispatch → head: watcher root 버그 수정·리뷰·커밋)
 - **파일**: 신규 `core/cursor_parser.py`, `core/cursor_usage.py` + `core/model.py`(Tool 에 "cursor") + `core/watcher.py`(WATCH_ROOTS 한 줄) + `ui_web/server.py`(/api/usage 에 cursor) + tests. (Python only — 프론트는 U4)
 - **데이터 소스** (탐색 완료):
   - 세션 jsonl: `~/.cursor/projects/<slug>/agent-transcripts/<uuid>/<uuid>.jsonl`

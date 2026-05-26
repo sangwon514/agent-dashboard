@@ -1,0 +1,2 @@
+{"role":"user","message":{"content":[{"type":"text","text":"<timestamp>2026-05-26T02:03:04Z</timestamp>\nInvestigate parser"}]}}
+{"role":"assistant","message":{"content":[{"type":"text","text":"Found details"}]}}

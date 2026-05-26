@@ -1,0 +1,2 @@
+{"role":"user","message":{"content":[{"type":"text","text":"<timestamp>2026-05-26T01:02:03Z</timestamp>\nBuild the thing"}]}}
+{"role":"assistant","message":{"content":[{"type":"text","text":"Working on it"},{"type":"tool_use","name":"edit_file","input":{"path":"agent_dashboard/core/example.py"}}]}}
