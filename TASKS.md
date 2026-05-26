@@ -56,7 +56,8 @@
 - **내용**: 프로젝트(집)별 해시 기반 색 자동 할당으로 시각 구분.
 - **수용**: 같은 프로젝트=항상 같은 색. 펫-키퍼 미감 유지.
 
-### U4 · Cursor town 프론트 (C4 의존) ⬜ — head 직접 (cursor 블로커)
+### U4 · Cursor town 프론트 (C4 의존) ✅ — head 직접 (cursor 블로커)
+- 결과: 라이브 검증 — cursor 세션 214개, usage 94req/24h. (전용 펫 스프라이트는 후속, 현재 slime)
 - **파일**: `app.js` (+ `style.css`)
 - **내용**: cursor 펫 스프라이트 + `cursor-*`→pet 매핑(codex 펫 패턴 참고) + town signpost 에 cursor 마을 + usage 헤더 cursor 세그먼트.
 - **의존**: C4(백엔드 tool="cursor" + /api/usage cursor) 착지 후 직렬. 

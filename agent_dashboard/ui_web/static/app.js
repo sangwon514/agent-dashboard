@@ -2674,6 +2674,8 @@ function spriteFor(subagent_type, calls = 0) {
     if (t === '__egg__') return 'egg';
     // 사용자 오버라이드
     if (petConfig[t]?.sprite && SPRITES[petConfig[t].sprite]) return petConfig[t].sprite;
+    // Cursor 마을 — 서브에이전트 펫(cursor-agent). MVP: slime 으로 매핑 (전용 스프라이트는 후속).
+    if (t === 'cursor' || t.startsWith('cursor-')) return 'slime';
     // Codex 마을 — originator 기반. `codex-tui` / `codex-exec` / `codex-vscode` → `${t}-pet`.
     // alias: `codex-desktop` 도 IDE 계열 → vscode-pet 으로 동일 매핑.
     // 그 외 codex-* → generic blob 폴백 (proposal: unknown originator).
@@ -3134,7 +3136,7 @@ function groupByProject(snap, town) {
 
 // town 별 alive 세션 수 — signpost UI 가 사용
 function townCounts(snap) {
-  const counts = { claude: 0, codex: 0 };
+  const counts = { claude: 0, codex: 0, cursor: 0 };
   const now = Date.now();
   for (const s of (snap.sessions || [])) {
     const proj = (s.project_display || s.project_slug || '').toLowerCase();
@@ -3885,7 +3887,7 @@ window.resetAllPetConfig = () => {
 //   `#town/claude` / `#town/codex`      → 해당 마을 lobby
 //   `#room/<key>`                       → claude room (back-compat)
 //   `#town/<t>/room/<key>`              → 해당 마을 room
-const VALID_TOWNS = ['claude', 'codex'];
+const VALID_TOWNS = ['claude', 'codex', 'cursor'];
 function currentTown() {
   const h = location.hash || '';
   const m1 = h.match(/^#town\/([a-z]+)(\/room\/.+)?$/);
@@ -3928,13 +3930,14 @@ function renderSignpost(snap) {
       <span class="signpost-count">${c}</span>
     </button>`;
   };
-  const codexVisible = true;
-  const codexTab = `<span class="signpost-sep">·</span>${make('codex', 'Codex town')}`;
+  const TOWN_LABELS = { claude: 'Claude town', codex: 'Codex town', cursor: 'Cursor town' };
+  const tabs = VALID_TOWNS
+    .map(t => make(t, TOWN_LABELS[t] || t))
+    .join('<span class="signpost-sep">·</span>');
   el.innerHTML = `
     <div class="signpost-frame">
       <span class="signpost-arrow signpost-arrow-l">◀</span>
-      ${make('claude', 'Claude town')}
-      ${codexTab}
+      ${tabs}
       <span class="signpost-arrow signpost-arrow-r">▶</span>
     </div>`;
   el.querySelectorAll('.signpost-link').forEach(btn => {
@@ -3942,10 +3945,13 @@ function renderSignpost(snap) {
       setTown(btn.dataset.town);
     });
   });
-  // 좌우 화살표 클릭 — 토글 (codex tab only shown when inhabited)
-  const cycle = () => setTown(cur === 'claude' && codexVisible ? 'codex' : 'claude');
-  el.querySelector('.signpost-arrow-l')?.addEventListener('click', cycle);
-  el.querySelector('.signpost-arrow-r')?.addEventListener('click', cycle);
+  // 좌우 화살표 클릭 — 마을 순환 (claude · codex · cursor)
+  const idx = Math.max(0, VALID_TOWNS.indexOf(cur));
+  const n = VALID_TOWNS.length;
+  el.querySelector('.signpost-arrow-l')?.addEventListener('click',
+    () => setTown(VALID_TOWNS[(idx - 1 + n) % n]));
+  el.querySelector('.signpost-arrow-r')?.addEventListener('click',
+    () => setTown(VALID_TOWNS[(idx + 1) % n]));
 }
 
 // ── Preview 모드 ─────────────────────────────────────────────
@@ -4412,6 +4418,18 @@ setInterval(applyTimeOfDay, 10 * 60 * 1000);
     return { html: `<span class="usage-tool-group">${inner}</span>`, worst };
   }
 
+  // Cursor 사용량은 rate-limit % 가 아니라 활동량(24h 요청수·라인변경) — 별도 렌더.
+  function cursorGroup(src) {
+    if (!src) return { html: '', worst: 0 };
+    const req = src.requests_24h || 0;
+    const lines = (src.lines_24h && src.lines_24h.total_changed) || 0;
+    if (!req && !lines) return { html: '', worst: 0 };
+    const inner = `<span class="usage-tool">Cursor</span>`
+      + `<span class="usage-seg-row"><span class="usage-seg-label">24h</span>`
+      + `<span class="usage-segment ok">${req} req · +${lines} lines</span></span>`;
+    return { html: `<span class="usage-tool-group">${inner}</span>`, worst: 0 };
+  }
+
   let _lastUsageData = null;
 
   function renderUsage(data) {
@@ -4421,13 +4439,14 @@ setInterval(applyTimeOfDay, 10 * 60 * 1000);
     const town = (typeof currentTown === 'function') ? currentTown() : 'claude';
     const claude = (town === 'claude') ? toolGroup('Claude', d.claude) : { html: '', worst: 0 };
     const codex  = (town === 'codex')  ? toolGroup('Codex',  d.codex)  : { html: '', worst: 0 };
-    if (!claude.html && !codex.html) {
+    const cursor = (town === 'cursor') ? cursorGroup(d.cursor) : { html: '', worst: 0 };
+    if (!claude.html && !codex.html && !cursor.html) {
       el.hidden = true;
       el.removeAttribute('data-severity');
       return;
     }
-    el.dataset.severity = pctClass(Math.max(claude.worst, codex.worst));
-    el.innerHTML = '<span class="usage-lightning">⚡</span>' + [claude.html, codex.html].filter(Boolean).join('');
+    el.dataset.severity = pctClass(Math.max(claude.worst, codex.worst, cursor.worst));
+    el.innerHTML = '<span class="usage-lightning">⚡</span>' + [claude.html, codex.html, cursor.html].filter(Boolean).join('');
     el.hidden = false;
   }
 
