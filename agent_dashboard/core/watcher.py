@@ -93,6 +93,10 @@ class JsonlWatcher:
         from fnmatch import fnmatch
         if not fnmatch(path.name, glob):
             return
+        # Cursor: subagents/*.jsonl 은 별도 세션이 아니라 부모 세션의 펫이어야 함 —
+        # 세션 카운트 부풀림 방지로 제외. (서브에이전트→펫 머지는 후속 과제.)
+        if tool == "cursor" and "subagents" in path.parts:
+            return
         try:
             with path.open("r", encoding="utf-8", errors="replace") as f:
                 if tool == "claude":
