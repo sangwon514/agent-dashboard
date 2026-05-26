@@ -39,17 +39,26 @@ You are the **Decide** stage of Agentville's `/auto` loop. You do NOT dispatch s
   "stop": false,
   "tasks": [
     {
-      "slug": "room-horizon-fix",
-      "agent": "frontend-dev",
-      "files": ["style.css"],
-      "spec_path": "/Users/sangwonlee/agent-dashboard/.claude/scratch/task-spec-room-horizon-fix.md",
+      "slug": "c3-incremental-read",
+      "hand": "codex",
+      "files": ["core/watcher.py", "core/store.py", "tests/"],
+      "spec_path": "/Users/sangwonlee/agent-dashboard/.claude/scratch/task-spec-c3-incremental-read.md",
+      "severity": "must"
+    },
+    {
+      "slug": "dark-mode-world",
+      "hand": "cursor",
+      "files": ["static/style.css"],
+      "spec_path": "/Users/sangwonlee/agent-dashboard/.claude/scratch/task-spec-dark-mode-world.md",
       "severity": "must"
     }
   ],
   "parallel_safe": true,
-  "iter_recommendation": "fix horizon first; defer pet-label collision to next iter (same file conflict)"
+  "iter_recommendation": "Codex+Cursor 두 lane 병렬 — disjoint 보장됨. cursor 블로커시 머리가 takeover (Case A)."
 }
 ```
+
+`hand` 는 `codex` / `cursor` / `pixel-artist` / `frontend-dev` 중 하나. **default 는 codex 또는 cursor** (CLI 디스패치). 나머지는 보조.
 
 Plus 3–5 lines of plain-text rationale.
 
