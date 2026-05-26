@@ -1,0 +1,49 @@
+---
+description: Agentville 프로젝트 전역 룰 — 컨셉·아키텍처·금지사항·검증 절차. 이 저장소 작업 시 항상 적용.
+alwaysApply: true
+---
+
+# Agentville — Cursor 작업 룰
+
+## 너의 역할: 손 (hands)
+- 이 저장소는 **멀티 툴 환경**이다. 역할 분담의 1순위 기준은 루트 **`COLLAB.md`** 를 읽어라.
+- **Claude Code = 머리(계획·결정·리뷰), 너(Cursor) = 손(구현).** 범위가 명확한 작업만 실행하고, 애매하면 추측 말고 사람에게 되묻는다.
+
+## 컨셉 (절대 불변)
+Agentville = Claude Code/Codex 세션의 서브에이전트 활동을 **펫-키퍼 메타포**로 라이브 표시하는 1인 로컬 모니터.
+- 프로젝트 = 집(house) · 세션 = 사람(humanoid sprite) · `subagent_type` = 펫(blob/bird/pup/slime/bunny/star/frog/egg)
+- 펫은 호출이 없으면 잠들고, 호출되면 깨어나 walk-cycle 애니메이션
+- **"방 안에 캐릭터가 사는" 픽셀 그림이 목표.** 단일 머신·단일 사용자·인증/DB/원격 없음.
+- 🚫 **재도입 금지**: 카드 대시보드 · 테이블 UI · RPG/소환사 메타포. 의도적으로 버려진 방향이다.
+
+## SSOT 문서 (충돌 시 본 룰보다 우선)
+- `DESIGN.md` — 데이터 소스(transcript JSONL)·이벤트 스키마·아키텍처
+- `ROADMAP.md` — P0~P9 우선순위
+- `README.md` — 설치/실행
+- `COLLAB.md` — 멀티 툴 역할 분담
+- `.claude/WORKFLOW.md` — 에이전트/훅/스킬 전체 그림 (Claude 전용 도구지만 구조 파악용)
+
+## 아키텍처 / 핵심 경로
+- Python 3.11+ / FastAPI + SSE / 단일 정적 HTML·CSS·JS / watchdog
+- 프론트: `agent_dashboard/ui_web/static/{index.html,style.css,app.js}` — 픽셀 스프라이트는 `app.js` 의 `SPRITES` 객체(16×16 ASCII 그리드)
+- 백엔드: `agent_dashboard/ui_web/server.py` (FastAPI + SSE)
+- 코어(UI 무관): `agent_dashboard/core/{model,parser,watcher,store,wt_status}.py`
+- 코어는 UI 비의존을 유지한다 — `core/` 에 UI import 를 넣지 마라.
+
+## 작업 원칙
+- **최소 변경.** 요청에 직접 대응하는 라인만. 인접 코드 리팩토링·포맷 변경 금지, 기존 스타일 유지.
+- 작업 로그는 `git log` 가 SSOT. work-log 파일 만들지 마라. 커밋은 conventional commit 풍으로 정직하게.
+
+## 검증 (커밋 전 필수 — 너에겐 훅이 없다)
+⚠️ `.claude/hooks/` · `.codex/hooks/` 의 자동 훅(pre-commit ruff+pytest, post-edit 스크린샷)은 **Cursor 에서 실행되지 않는다.** 직접 해라:
+1. `ruff check agent_dashboard`
+2. `pytest -q` (단위 테스트만, 외부 시스템 X)
+3. 프론트 변경 시 → `python3 -m agent_dashboard serve` 띄우고 http://127.0.0.1:7878 를 눈으로 확인
+- `git commit --no-verify` 금지.
+
+## 출력/탐색 룰
+- 50줄 이상 출력은 `/tmp/agentville-out/` 에 파일로 쓰고 grep 으로 탐색. 짧은 명령(`git status`,`ls`)은 직접 OK.
+
+## Cursor 가 못 쓰는 것 (착각 금지)
+- `/auto`, `/propose` 슬래시 스킬과 `.claude/agents`·`.codex/agents` 서브에이전트 카탈로그는 **Claude Code/Codex 전용**이다. Cursor 에서 호출 시도하지 마라.
+- 그런 오케스트레이션(자율 루프, 방향성 제안)이 필요하면 사람에게 "Claude Code 에서 돌려달라"고 요청한다.

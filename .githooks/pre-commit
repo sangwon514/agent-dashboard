@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# git pre-commit hook — 도구 무관(Claude Code / Codex / Cursor / 수동) 공통 안전망.
+# 커밋 전 ruff lint + pytest 실행, 실패 시 커밋 차단.
+#
+# 활성화(클론/머신당 1회):  git config core.hooksPath .githooks
+# 이 머신엔 uv 가 표준이라 uv 경로를 우선 사용. (.venv 엔 ruff/pytest 미설치)
+#
+# 한계: `git commit --no-verify` 는 git 설계상 이 훅을 우회한다. 수동 우회 금지.
+set -uo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)" || exit 1
+cd "$ROOT" || exit 1
+OUT=/tmp/agentville-out
+mkdir -p "$OUT"
+
+have() { command -v "$1" >/dev/null 2>&1; }
+
+# 러너 결정: uv 우선(저장소 표준) → 없으면 PATH 의 ruff/pytest
+if have uv; then
+  RUFF=(uvx ruff)
+  PYTEST=(uv run --quiet --with pytest pytest)
+elif have ruff && have pytest; then
+  RUFF=(ruff)
+  PYTEST=(pytest)
+else
+  echo "⚠️  pre-commit: uv/ruff/pytest 없음 → 검사 생략. 수동 검증 권장." >&2
+  exit 0
+fi
+
+echo "▶ ruff check agent_dashboard …" >&2
+if ! "${RUFF[@]}" check agent_dashboard >"$OUT/ruff.txt" 2>&1; then
+  echo "✗ ruff 실패 — 커밋 차단. 상세: $OUT/ruff.txt" >&2
+  tail -20 "$OUT/ruff.txt" >&2
+  exit 1
+fi
+
+echo "▶ pytest -q …" >&2
+if ! "${PYTEST[@]}" -q >"$OUT/test.txt" 2>&1; then
+  echo "✗ pytest 실패 — 커밋 차단. 상세: $OUT/test.txt" >&2
+  grep -E "FAILED|ERROR|^E " "$OUT/test.txt" | head -15 >&2
+  exit 1
+fi
+
+echo "✓ ruff + pytest 통과" >&2
+exit 0

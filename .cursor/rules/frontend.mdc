@@ -1,0 +1,15 @@
+---
+description: 프론트엔드(스프라이트·CSS·SSE) 구현 세부 룰
+globs: agent_dashboard/ui_web/static/**
+---
+
+# 프론트엔드 룰 (agent_dashboard/ui_web/static/**)
+
+- **픽셀 스프라이트** = `app.js` 의 `SPRITES` 객체, 16×16 ASCII 그리드. 종: blob/bird/pup/slime/bunny/star/frog/egg.
+- **애니메이션**: 펫은 idle 시 잠자기(bob), 호출되면 walk-cycle. walk 는 frame 2 변형으로 표현. 모두 CSS keyframe.
+  - 과거 버그: 헤어/액세서리가 walk 중 함께 bobbing 하는 현상 → walk 애니메이션이 헤어/액세서리를 흔들지 않도록 주의.
+- **실시간 데이터**: SSE 스트림. `server.py` 의 이벤트 흐름과 `app.js` 구독부가 일치해야 한다.
+- **빌드 없음**: 단일 정적 HTML/CSS/JS. 프레임워크·번들러·npm 의존성 추가 금지.
+- **검증**: 변경 후 `python3 -m agent_dashboard serve` 띄우고 lobby / room 뷰를 둘 다 눈으로 확인.
+  - 회귀 체크 포인트(과거 이슈): humanoid 라벨 충돌, 카드 bleed, 펫이 바닥(floor)에 안 붙는 문제, usage-bar 시각 과다 노출.
+- 코드 외 디자인 방향(컨셉)은 `.cursor/rules/agentville.mdc` 의 금지사항을 따른다.
