@@ -38,3 +38,18 @@ Codex 와 Cursor 가 **동시에** 일할 수 있으므로, 충돌을 사후 해
 4. **경계 파일은 직렬화(병렬 금지).** 두 도메인이 만나는 파일을 둘 다 건드려야 하는 작업은 머리가 한 도구씩 순서대로 배정한다: `pyproject.toml`, `server.py` 의 static 서빙 부분 등. (`index.html` 은 static 이라 Cursor 전담 — Codex 는 손대지 않는다.)
 5. **백엔드↔프론트 의존 작업은 머리가 분해.** "API 필드 추가(Codex) + 그 표시(Cursor)" 처럼 엮인 건 병렬 금지 — 한쪽 먼저 끝내고 순서대로. 서로 독립인 작업만 병렬로 돌린다.
 6. **현재 점유는 [`TASKS.md`](./TASKS.md) 가 표시.** 손은 자기 lane 항목만 집고, 시작 시 🔵in-progress / 완료 시 ✅done 으로 갱신해 다른 손이 점유 상태를 본다.
+
+## 🛰 머리→손 CLI 디스패치
+
+머리(Claude Code)는 손을 **헤드리스 CLI 로 직접** 부른다 — 사람이 프롬프트를 복붙할 필요 없음. 디스패처: [`tools/dispatch.sh`](./tools/dispatch.sh).
+
+```bash
+tools/dispatch.sh codex  "<task>"   # → codex exec -C <repo> -s workspace-write
+tools/dispatch.sh cursor "<task>"   # → cursor-agent -p --force --output-format text
+```
+
+- 디스패처가 lane 규칙·repo 경로·"커밋 금지"·자체검증 지시를 프롬프트에 자동 주입한다.
+- 두 호출은 lane(Python vs static/**)이 disjoint → 머리가 **background 로 병렬 디스패치**해도 파일 충돌 없음.
+- 손은 편집 + 자체검증까지만. **커밋은 머리가** `git diff` 리뷰 후 lane 별로 한다 (동시 `git commit` 의 `index.lock` 경쟁 회피 + 리뷰 루프 유지).
+- 로그: `/tmp/agentville-out/dispatch-<tool>-<ts>.log`.
+- 전제: `codex`(ChatGPT 로그인) · `cursor-agent`(Cursor 로그인) 인증 완료 상태여야 함.
