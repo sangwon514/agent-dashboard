@@ -1,0 +1,8 @@
+{"timestamp":"2026-05-13T01:57:24.927Z","type":"session_meta","payload":{"id":"019e1f0d-7df6-7213-b6cd-9cfbf4001fb9","timestamp":"2026-05-13T01:57:18.455Z","cwd":"/Users/sangwonlee/git/okestro/trombone/4.0.0/contrabass-admin-service","originator":"codex_exec","cli_version":"0.130.0","source":"exec","model_provider":"openai"}}
+{"timestamp":"2026-05-13T01:57:24.930Z","type":"event_msg","payload":{"type":"task_started","turn_id":"019e1f0d-7e48-79a2-a5bb-9146a03c7835","started_at":1778637438}}
+{"timestamp":"2026-05-13T01:57:33.822Z","type":"response_item","payload":{"type":"function_call","name":"exec_command","arguments":"{\"cmd\":\"ls -la /tmp\",\"workdir\":\"/Users/sangwonlee\"}","call_id":"call_AAA"}}
+{"timestamp":"2026-05-13T01:57:34.033Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call_AAA","output":"Chunk ID: e4a6a3\nWall time: 0.0232 seconds\nProcess exited with code 0\nOriginal token count: 1893\nOutput:\ntotal 0\n"}}
+{"timestamp":"2026-05-13T01:57:40.689Z","type":"response_item","payload":{"type":"reasoning","summary":[],"content":null}}
+{"timestamp":"2026-05-13T01:58:00.100Z","type":"response_item","payload":{"type":"function_call","name":"apply_patch","arguments":"{\"input\":\"*** Update File: /tmp/x.py\\n@@\\n-foo\\n+bar\\n\"}","call_id":"call_BBB"}}
+{"timestamp":"2026-05-13T01:58:00.500Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call_BBB","output":"Process exited with code 1\nOutput:\nApply failed: file not found"}}
+{"timestamp":"2026-05-13T01:58:10.000Z","type":"response_item","payload":{"type":"function_call","name":"exec_command","arguments":"{\"cmd\":\"sleep 5\"}","call_id":"call_CCC"}}

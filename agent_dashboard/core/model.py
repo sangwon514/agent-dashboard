@@ -6,6 +6,9 @@ from typing import Literal, Optional
 
 Status = Literal["running", "done", "failed", "stale", "orphaned"]
 Source = Literal["transcript", "wt_status"]
+# Tool = "어느 도구의 세션인가" (마을 분리 키). Claude 마을과 Codex 마을 분리용.
+# 신규 source(Cursor 등) 추가 시 union 확장만으로 같은 모델 재사용.
+Tool = Literal["claude", "codex"]
 
 
 @dataclass
@@ -22,6 +25,7 @@ class AgentEvent:
     finished_at: Optional[datetime] = None
     status: Status = "running"
     is_error: bool = False
+    tool: Tool = "claude"
 
     @property
     def duration_sec(self) -> Optional[float]:
