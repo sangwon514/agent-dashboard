@@ -33,9 +33,28 @@ class Store:
             except Exception as exc:
                 log.debug("subscriber raised: %s", exc)
 
-    def update_transcript(self, path: Path, events: dict[str, AgentEvent]) -> None:
-        session_id = path.stem
-        project_slug = path.parent.name
+    def update_transcript(
+        self,
+        path: Path,
+        events: dict[str, AgentEvent],
+        tool: str = "claude",
+    ) -> None:
+        # session metadata 는 events 에서 추출 (parser 가 이미 채워둠).
+        # Claude (~/.claude/projects/<slug>/<sid>.jsonl) 와 Codex (~/.codex/sessions/Y/M/D/rollout-*.jsonl)
+        # 디렉토리 구조가 달라 path 에서 직접 뽑으면 안 됨.
+        # `tool` 인자: watcher 가 root 기준으로 명시 전달 — events 비어도 town 분류 정확.
+        if events:
+            sample = next(iter(events.values()))
+            session_id = sample.session_id or path.stem
+            project_slug = sample.project_slug or path.parent.name
+            project_cwd = sample.project_cwd or str(path.parent)
+            tool = sample.tool or tool
+        else:
+            # 빈 파일 — path.stem 만 신뢰. project_slug 는 비워둠 (Codex day 폴더명 같은 noise 차단).
+            session_id = path.stem
+            project_slug = ""
+            project_cwd = str(path.parent)
+            # tool 은 인자값 그대로 (watcher 가 알려준 root 의 tool)
         last = max(
             (e.finished_at or e.started_at for e in events.values()),
             default=datetime.now(timezone.utc),
@@ -44,7 +63,8 @@ class Store:
             self._transcript[session_id] = events
             self._session_meta[session_id] = {
                 "project_slug": project_slug,
-                "project_cwd": str(path.parent),
+                "project_cwd": project_cwd,
+                "tool": tool,
                 "last_activity": last,
             }
         self._notify()
@@ -65,6 +85,7 @@ class Store:
                         "project_slug": meta.get("project_slug", ""),
                         "project_cwd": meta.get("project_cwd", ""),
                         "project_display": display_project_name(meta.get("project_slug", "")),
+                        "tool": meta.get("tool", "claude"),
                         "last_activity": meta.get(
                             "last_activity", datetime.now(timezone.utc)
                         ).isoformat(),

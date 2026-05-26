@@ -120,9 +120,9 @@ def status() -> None:
     res = subprocess.run(
         ["launchctl", "list"], capture_output=True, text=True, check=False
     )
-    lines = [l for l in res.stdout.splitlines() if "agent-dashboard" in l]
+    lines = [ln for ln in res.stdout.splitlines() if "agent-dashboard" in ln]
     if not lines:
         print("(no agent-dashboard launchctl entries)")
         return
-    for l in lines:
-        print(l)
+    for ln in lines:
+        print(ln)

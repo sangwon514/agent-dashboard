@@ -12,7 +12,9 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from sse_starlette.sse import EventSourceResponse
 
+from ..core.codex_usage import read_codex_usage
 from ..core.store import Store
+from ..core.usage import read_claude_usage
 from ..core.watcher import JsonlWatcher
 from ..core.wt_status import WtStatusWatcher
 
@@ -61,8 +63,18 @@ def make_app() -> FastAPI:
     async def snapshot():
         return store.snapshot()
 
+    @app.get("/api/usage")
+    async def usage():
+        # codex_usage 는 subprocess + 180s 캐시 — async loop 블로킹 회피를 위해 threadpool 위임
+        codex = await asyncio.to_thread(read_codex_usage)
+        return {"claude": read_claude_usage(), "codex": codex}
+
     @app.get("/api/stream")
     async def stream(request: Request):
+        # 다발성 transcript 갱신을 합쳐 보내는 디바운스 윈도우 (초).
+        # 서브에이전트 폭주 시 update_event 가 초당 수십 번 set 되는데,
+        # 그걸 그대로 push 하면 클라이언트가 풀-DOM 재구축을 반복해 버벅임.
+        DEBOUNCE_S = 0.25
         async def gen():
             yield {"event": "snapshot", "data": json.dumps(store.snapshot())}
             while True:
@@ -70,6 +82,9 @@ def make_app() -> FastAPI:
                     break
                 try:
                     await asyncio.wait_for(update_event.wait(), timeout=15.0)
+                    update_event.clear()
+                    # 윈도우 내에 도착한 후속 set 들을 흡수 — 마지막 상태만 보냄.
+                    await asyncio.sleep(DEBOUNCE_S)
                     update_event.clear()
                     yield {"event": "snapshot", "data": json.dumps(store.snapshot())}
                 except asyncio.TimeoutError:

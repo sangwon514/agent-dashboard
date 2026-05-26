@@ -9,3 +9,12 @@ logs/
 .coverage
 .pytest_cache/
 .DS_Store
+
+# Claude Code local
+.claude/scratch/*
+!.claude/scratch/README.md
+.claude/compact-state.md
+.claude/settings.local.json
+
+# Vendored external sprite packs — 코드 미참조, 대용량 바이너리. 디스크엔 두되 git 제외.
+agent_dashboard/ui_web/static/sprites/external/

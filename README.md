@@ -14,21 +14,44 @@ Claude Code 의 모든 세션에서 호출되는 서브에이전트(`Agent` tool
 ## 설치
 
 ```bash
-cd ~/agent-dashboard
+git clone https://github.com/sangwon514/agent-dashboard.git
+cd agent-dashboard
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -e ".[menubar]"     # 웹+TUI+메뉴바
-# 또는 메뉴바 빼고:
+pip install -e ".[menubar,app]"     # 웹+TUI+메뉴바+네이티브 창
+# 최소 설치:
 # pip install -e .
 ```
+
+`~/.claude/projects/` 와 `/tmp/wt-status/` 를 자동으로 읽기 때문에 사용자별
+설정/하드코딩 경로는 없음 — 어떤 macOS 사용자라도 동일하게 동작.
 
 ## 실행
 
 ```bash
 agent-dashboard                       # 웹 서버 (기본). http://127.0.0.1:7878
+agent-dashboard app                   # 네이티브 창 (pywebview, 브라우저 안 씀)
 agent-dashboard tui                   # 터미널 (rich)
-agent-dashboard menubar               # macOS 메뉴바 (rumps 필요, 웹 서버 동시 실행 권장)
+agent-dashboard menubar               # macOS 메뉴바 (rumps 필요)
 ```
+
+## macOS 앱 (.app) 빌드
+
+진짜 더블클릭 가능한 `.app` 으로 만들기:
+
+```bash
+pip install -e ".[app,build]"
+agent-dashboard build-app             # → dist/agent-dashboard.app
+mv dist/agent-dashboard.app /Applications/
+open /Applications/agent-dashboard.app
+```
+
+`.app` 안에는 Python 인터프리터와 의존성이 모두 동봉되어 있어, 받은 사람은
+별도 설치 없이 바로 실행할 수 있음. 단, 코드 서명을 안 했기 때문에 처음
+실행할 때 macOS Gatekeeper 가 막을 수 있는데, **시스템 설정 → 개인정보 보호
+및 보안 → "그래도 열기"** 한 번이면 됨.
+
+`.app` 의 로그는 `~/Library/Logs/agent-dashboard/app.log`.
 
 ## 자동 시작 (LaunchAgent)
 

@@ -70,11 +70,12 @@ class ParseJsonlTests(unittest.TestCase):
 
 class DisplayNameTests(unittest.TestCase):
     def test_strips_users_prefix(self):
-        slug = "-Users-sangwonlee-git-okestro-4-0-0-contrabass-admin-service"
+        slug = "-Users-alice-projects-some-org-my-project"
         # 'Users' + user 한 segment 제거 후 나머지 join
         name = display_project_name(slug)
-        self.assertIn("contrabass-admin-service", name)
+        self.assertIn("my-project", name)
         self.assertNotIn("Users", name)
+        self.assertNotIn("alice", name)
 
     def test_empty_slug(self):
         self.assertEqual(display_project_name(""), "?")

@@ -19,8 +19,10 @@ _USAGE = """\
 agent-dashboard — live monitor for Claude Code subagents.
 
   serve                  start the web server (default)
+  app                    native macOS window (pywebview)
   tui                    rich terminal UI
   menubar                macOS menubar app
+  build-app              build a distributable .app bundle (py2app)
   install-launchagents   register web + menubar to launch at login
   uninstall-launchagents
   status                 show launchctl entries
@@ -35,12 +37,18 @@ def main() -> None:
     if cmd in ("serve", "web", "run"):
         from .ui_web.server import main as run_web
         run_web()
+    elif cmd in ("app", "window"):
+        from .ui_app import run as run_app
+        run_app()
     elif cmd in ("tui",):
         from .ui_tui import run as run_tui
         run_tui()
     elif cmd in ("menubar", "mb"):
         from .ui_menubar import run as run_menubar
         run_menubar()
+    elif cmd in ("build-app",):
+        from .build_app import build
+        build()
     elif cmd in ("install-launchagents", "install"):
         from .launchagents import install
         install()

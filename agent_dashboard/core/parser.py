@@ -106,7 +106,7 @@ def parse_jsonl(
 
 def display_project_name(slug: str) -> str:
     """Slug → 사람이 읽기 쉬운 짧은 이름 (best-effort).
-    `-Users-sangwonlee-...-contrabass-admin-service` →`contrabass-admin-service`.
+    `-Users-<username>-...-my-project` → `my-project`.
     """
     if not slug:
         return "?"

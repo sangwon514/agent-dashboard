@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,20 +8,20 @@
 </head>
 <body>
   <header>
-    <h1>agent-dashboard</h1>
-    <div class="summary" id="summary">connecting…</div>
-    <div class="controls">
-      <input id="search" type="search" placeholder="filter description / subagent / project…" autocomplete="off">
-      <label class="filter"><input type="checkbox" id="f-running" checked> running</label>
-      <label class="filter"><input type="checkbox" id="f-done" checked> done</label>
-      <label class="filter"><input type="checkbox" id="f-failed" checked> failed</label>
-      <label class="filter"><input type="checkbox" id="f-stale" checked> stale</label>
+    <div class="brand"><span class="icon-mount" data-icon="brand-house" data-icon-scale="2"></span> <span>Agentville</span><span class="brand-sub">— 에이전트 마을</span></div>
+    <div class="summary" id="summary">마을 문을 여는 중…</div>
+    <div class="header-right">
+      <span id="usage-bar" class="usage-bar" aria-label="Claude 토큰 사용량" hidden></span>
+      <button class="settings-btn" onclick="window.openSettings()" title="펫 외형 설정"><span class="icon-mount" data-icon="cog" data-icon-scale="1"></span></button>
     </div>
+    <a href="?preview=motions" class="dev-link" style="font-size:10px;opacity:.5;margin-left:8px;color:inherit;text-decoration:none;">모션 프리뷰</a>
   </header>
+  <nav id="town-signpost" aria-label="마을 전환"></nav>
   <main id="root"></main>
+  <aside id="settings-root"></aside>
   <footer>
     <span id="conn">●</span>
-    <span class="muted">localhost:7878 · sourced from <code>~/.claude/projects/*</code> + <code>/tmp/wt-status</code></span>
+    <span class="muted">localhost · <code>~/.claude/projects/*</code> + <code>~/.codex/sessions/*</code></span>
   </footer>
   <script src="/static/app.js"></script>
 </body>
