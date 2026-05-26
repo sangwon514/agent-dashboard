@@ -53,3 +53,24 @@ tools/dispatch.sh cursor "<task>"   # → cursor-agent -p --force --output-forma
 - 손은 편집 + 자체검증까지만. **커밋은 머리가** `git diff` 리뷰 후 lane 별로 한다 (동시 `git commit` 의 `index.lock` 경쟁 회피 + 리뷰 루프 유지).
 - 로그: `/tmp/agentville-out/dispatch-<tool>-<ts>.log`.
 - 전제: `codex`(ChatGPT 로그인) · `cursor-agent`(Cursor 로그인) 인증 완료 상태여야 함.
+
+## 🔋 토큰/쿼터 소진 대응
+
+손이 쿼터/토큰 소진으로 막힐 수 있다. 원칙: **lane 규율은 유지, 머리가 메우고, reset 까지 보류.**
+
+**공통 규칙**
+- ❌ **크로스 배정 금지**: 소진된 손의 작업을 다른 손에게 넘기지 않는다 (Cursor→Python, Codex→frontend = lane 붕괴).
+- ✅ **머리는 lane 제약이 없다** → 손이 막힌 lane 을 머리(Claude Code)가 직접 구현·커밋할 수 있다.
+- **감지 2단**:
+  - *예측* — Agentville 대시보드 `/api/usage` 가 Claude·Codex 사용량(5h/weekly %·reset)을 라이브 표시. 머리는 소진 전에 미리 안다.
+  - *확정* — `tools/dispatch.sh` 가 실패 로그에서 쿼터 패턴 감지 시 `DISPATCH_RESULT=quota_exhausted` 마커 출력. 머리는 이 마커로 분기. (Cursor 는 전용 usage API 없음 → 에러 기반.)
+
+**Case A — 한쪽만 소진**
+- 살아있는 손은 자기 lane 계속 진행.
+- 소진된 손의 lane: ① 가치/긴급하면 **머리가 직접 구현** · ② 급하지 않으면 reset 까지 보류하고 `TASKS.md` 에 `⏸ blocked until <reset>` 표기 후 살아있는 lane 만 진행.
+
+**Case B — 둘 다 소진**
+- 머리가 **우선순위 높은 작업부터 직접** 수행 (양 lane, 한 번에 한 파일군이라 충돌 없음).
+- 머리 자신도 쿼터 압박이면 → 전 작업 일시정지, 각 도구 reset 시각 기록, **reset 시점 재개 예약**(background poller), 사용자에게 1줄 보고 후 대기.
+
+**reset 후 재개**: 손 쿼터 복귀 시 머리는 delegation 모드로 복귀 — 메워둔 작업은 그대로, 남은 lane 을 해당 손에 재배정.

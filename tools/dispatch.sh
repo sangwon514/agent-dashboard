@@ -40,12 +40,21 @@ $TASK
 EOF
 
 echo "▶ [$TOOL] dispatch 시작 → 로그: $LOG" >&2
+set +e
 case "$TOOL" in
-  codex)
-    codex exec -C "$ROOT" -s workspace-write "$PROMPT" 2>&1 | tee "$LOG"
-    ;;
-  cursor)
-    ( cd "$ROOT" && cursor-agent -p --force --output-format text "$PROMPT" ) 2>&1 | tee "$LOG"
-    ;;
+  codex)  codex exec -C "$ROOT" -s workspace-write "$PROMPT" 2>&1 | tee "$LOG"; rc=${PIPESTATUS[0]};;
+  cursor) ( cd "$ROOT" && cursor-agent -p --force --output-format text "$PROMPT" ) 2>&1 | tee "$LOG"; rc=${PIPESTATUS[0]};;
 esac
-echo "✓ [$TOOL] 완료 → $LOG  (머리: git diff 로 리뷰 후 커밋)" >&2
+set -e
+
+# 쿼터/토큰 소진 감지 → 머리가 분기할 수 있게 마커 출력 (COLLAB.md 토큰 소진 대응)
+QUOTA_RE='rate.?limit|quota|usage limit|too many requests|\b429\b|limit reached|insufficient|out of (credit|token)|exhaust|일일 한도|한도를 초과'
+if grep -qiE "$QUOTA_RE" "$LOG" 2>/dev/null; then
+  RESULT=quota_exhausted
+elif [ "${rc:-0}" -ne 0 ]; then
+  RESULT=error
+else
+  RESULT=ok
+fi
+echo "DISPATCH_RESULT=$RESULT rc=${rc:-0} TOOL=$TOOL LOG=$LOG" >&2
+echo "✓ [$TOOL] 완료(result=$RESULT) → $LOG  (머리: git diff 리뷰 후 커밋 / quota 면 폴백)" >&2
