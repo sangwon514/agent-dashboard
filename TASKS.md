@@ -29,7 +29,7 @@
 
 ## ✋ Cursor lane — frontend only (`agent_dashboard/ui_web/static/**`)
 
-### U1 · 키보드 단축키 (ROADMAP P7-5) 🔵  ← 여기부터
+### U1 · 키보드 단축키 (ROADMAP P7-5) ✅
 - **파일**: `app.js` (+ 필요시 `style.css`)
 - **내용**: `/` 검색창 포커스 · `f` 필터 토글 · `Esc` expanded 패널 닫기.
 - **수용**: `python3 -m agent_dashboard serve` 띄워 동작 확인. **input/textarea 포커스 중엔 단축키 무시.**
