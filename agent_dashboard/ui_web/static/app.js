@@ -4379,6 +4379,26 @@ function connect() {
 
 window.addEventListener('hashchange', () => { openDetail = null; render(lastSnap); });
 
+// ── 펫 poke — 클릭 시 폴짝 + 하트 (capture: in-scene stopPropagation 보다 먼저) ──
+document.addEventListener('click', (e) => {
+  const pet = e.target.closest('.pet[data-pet]');
+  if (!pet) return;
+  const wrap = pet.querySelector('.sprite-wrap');
+  if (wrap) {
+    wrap.classList.remove('poked');
+    void wrap.offsetWidth;
+    wrap.classList.add('poked');
+    wrap.addEventListener('animationend', () => wrap.classList.remove('poked'), { once: true });
+  }
+  const heart = document.createElement('span');
+  heart.className = 'poke-heart';
+  heart.textContent = '❤';
+  heart.style.left = e.clientX + 'px';
+  heart.style.top = (e.clientY - 14) + 'px';
+  document.body.appendChild(heart);
+  heart.addEventListener('animationend', () => heart.remove(), { once: true });
+}, true);
+
 // ── 키보드 단축키 ────────────────────────────────────────────────
 // / → 검색창 포커스 · f → 필터 토글 · Esc → expanded 패널 닫기
 // input/textarea 포커스 중엔 Esc 외 단축키 무시

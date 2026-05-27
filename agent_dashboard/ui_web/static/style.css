@@ -1870,6 +1870,35 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
   100% { transform: translateY(0) scaleY(1); }
 }
 
+/* 펫 poke — 클릭 시 hover-hop 보다 큰 1회 점프 */
+@keyframes poke-bounce {
+  0%   { transform: translateY(0) scaleY(1); }
+  25%  { transform: translateY(-18px) scaleY(1.12); }
+  55%  { transform: translateY(0) scaleY(0.82); }
+  100% { transform: translateY(0) scaleY(1); }
+}
+.pet .sprite-wrap.poked { animation: poke-bounce .5s ease-out; }
+
+@keyframes poke-heart-float {
+  0%   { opacity: 0;   transform: translate(-50%, -50%) scale(.6); }
+  25%  { opacity: 1;   transform: translate(-50%, -90%) scale(1); }
+  100% { opacity: 0;   transform: translate(-50%, -160%) scale(.9); }
+}
+@keyframes poke-heart-fade {
+  0%   { opacity: 1; transform: translate(-50%, -50%); }
+  100% { opacity: 0; transform: translate(-50%, -50%); }
+}
+.poke-heart {
+  position: fixed;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 9999;
+  font-size: 14px;
+  color: #e8617a;
+  animation: poke-heart-float .75s ease-out forwards;
+  will-change: transform, opacity;
+}
+
 /* 귀환 축하 점프 (한 번만) */
 @keyframes celebrate {
   0%   { transform: translateY(0) scale(1); }
@@ -2186,6 +2215,8 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
   .village-bg .vb.grass, .village-bg .vb.flower { animation: none !important; }
   .lobby-fountain .sprite .px-E,
   .village-bg .vb.well svg .px-E { animation: none !important; }
+  .pet .sprite-wrap.poked { animation: none !important; }
+  .poke-heart { animation: poke-heart-fade .6s ease-out forwards !important; }
 }
 
 @media (max-width: 480px) {
