@@ -2988,11 +2988,19 @@ function humanActivityTagFor(s) {
 }
 
 // ── 말풍선용 현재 임무 요약 — running 이벤트의 description 우선 ─────
+// _STALE_AFTER_SEC=600 (서버) 이라 running 상태가 최대 10분 유지 → bubble 이
+// 작업 끝난 후에도 한참 떠 있는 문제. 클라이언트에서 더 짧은 TTL(180s) 적용.
+const BUBBLE_TTL_SEC = 180;
 function humanQuestSummary(s) {
   const events = s.events || [];
   const running = events.filter(e => e.status === 'running');
   if (!running.length) return null;
   const latest = running.sort((a, b) => new Date(b.started_at) - new Date(a.started_at))[0];
+  // age_sec 가 snapshot 에 있으면 그것을, 없으면 클라이언트 시계로 계산.
+  const ageSec = (typeof latest.age_sec === 'number')
+    ? latest.age_sec
+    : Math.max(0, (Date.now() - new Date(latest.started_at).getTime()) / 1000);
+  if (ageSec > BUBBLE_TTL_SEC) return null;
   const text = (latest.description || latest.prompt_first_line || '').trim();
   if (!text) return null;
   return text.length > 26 ? text.slice(0, 26) + '…' : text;

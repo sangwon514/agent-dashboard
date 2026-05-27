@@ -514,10 +514,32 @@ footer {
 code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
 
 /* ── 로비 ── */
+/* "빈 마을" 상태: 80% 가 텅 빈 들판처럼 보이던 부조화 해소 —
+   illustration 을 viewport 세로 중앙에 두고 padding 을 텍스트 주변에 응집.
+   "failed load" 가 아니라 "한산한 동네" 로 읽히도록 muted 텍스트 추가. */
 .lobby-empty {
-  text-align: center; padding: 80px 20px; color: var(--muted);
+  text-align: center;
+  padding: 32px 20px 48px;
+  color: var(--muted);
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  max-width: 480px;
+  margin: 56px auto 0;
 }
-.lobby-empty .big { font-size: 48px; margin-bottom: 12px; }
+.lobby-empty .big {
+  font-size: 56px;
+  margin-bottom: 4px;
+  opacity: 0.7;
+}
+.lobby-empty .muted {
+  font-size: 12px;
+  line-height: 1.5;
+  opacity: 0.7;
+}
 
 /* 마을(lobby) — 카드를 가로 중앙 + 풀밭 위에 떠 있는 것처럼 */
 .rooms, .lobby-grid, .lobby {
@@ -598,8 +620,14 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1
 .room-meta .dot.stale   { background: var(--warn); }
 
 .crowd {
-  display: flex; gap: 8px; flex-wrap: wrap; min-height: 52px;
-  padding-bottom: 6px; overflow: visible; align-content: flex-end;
+  display: flex; gap: 8px; flex-wrap: wrap;
+  /* [iter4] floor-grounding: min-height 52→78px 키워 펫이 항상 카드 바닥에
+     달라붙도록. 펫 적을 때 위쪽이 비어보이는 게 "방에 캐릭터가 산다" 미감 —
+     ui-critic 가 "inventory slot" 으로 읽힌다고 지적한 균등 sandwich 해소. */
+  min-height: 78px;
+  padding-bottom: 6px; overflow: visible;
+  align-items: flex-end;   /* single-row 펫도 바닥 정렬 */
+  align-content: flex-end; /* multi-row wrap 시에도 바닥부터 쌓임 */
   justify-content: center;  /* [A] lone pet / partial row 가로 중앙 정렬 */
 }
 .crowd .more {
