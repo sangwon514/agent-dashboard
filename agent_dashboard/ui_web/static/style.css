@@ -242,40 +242,44 @@ body[data-town="codex"] .scene .floor {
   border-bottom-color: rgba(80, 110, 150, 0.5);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
+/* [iter1] dark signpost — warm tan strip 제거, body navy(#1a2236) 와 strip 융화 */
 :root[data-theme="dark"] #town-signpost {
-  background: linear-gradient(180deg, rgba(40, 30, 20, 0.4) 0%, rgba(40, 30, 20, 0.6) 100%);
-  border-bottom-color: rgba(120, 100, 70, 0.45);
+  background: linear-gradient(180deg, rgba(22, 28, 44, 0.96) 0%, rgba(18, 24, 38, 0.99) 100%);
+  border-bottom-color: rgba(70, 90, 120, 0.38);
 }
 :root[data-theme="dark"] .signpost-frame {
-  background: rgba(48, 40, 30, 0.85);
-  border-color: rgba(160, 130, 85, 0.55);
-  box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.45);
+  background: rgba(28, 34, 50, 0.92);
+  background-image: none;
+  border-color: rgba(90, 110, 145, 0.48);
+  box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
 }
-:root[data-theme="dark"] .signpost-link { color: #e0cea0; }
+:root[data-theme="dark"] .signpost-link { color: #c8d4e8; }
 :root[data-theme="dark"] .signpost-link:hover {
-  background: rgba(180, 140, 80, 0.18);
-  border-color: rgba(160, 130, 85, 0.35);
+  background: rgba(90, 120, 170, 0.22);
+  border-color: rgba(120, 150, 190, 0.35);
 }
 :root[data-theme="dark"] .signpost-link.active {
-  background: rgba(200, 160, 90, 0.28);
-  border-color: rgba(200, 160, 90, 0.55);
+  background: rgba(70, 100, 150, 0.35);
+  border-color: rgba(120, 160, 210, 0.52);
 }
 :root[data-theme="dark"] .signpost-count {
-  background: rgba(220, 190, 130, 0.7);
-  color: #2a1d0f;
+  background: rgba(100, 130, 180, 0.55);
+  color: #e8eef8;
 }
 :root[data-theme="dark"] .signpost-link.active .signpost-count {
-  background: rgba(240, 210, 140, 0.9);
+  background: rgba(120, 160, 210, 0.78);
+  color: #0e1624;
 }
-:root[data-theme="dark"] .signpost-sep { color: #d4c39b; }
+:root[data-theme="dark"] .signpost-sep { color: #8a9bb8; }
 :root[data-theme="dark"] body[data-town="codex"] #town-signpost {
-  background: linear-gradient(180deg, rgba(30, 45, 70, 0.5) 0%, rgba(30, 45, 70, 0.75) 100%);
-  border-bottom-color: rgba(80, 110, 150, 0.5);
+  background: linear-gradient(180deg, rgba(18, 24, 40, 0.97) 0%, rgba(14, 20, 36, 0.99) 100%);
+  border-bottom-color: rgba(70, 95, 130, 0.42);
 }
 :root[data-theme="dark"] body[data-town="codex"] .signpost-frame {
-  background: rgba(36, 48, 68, 0.9);
-  border-color: rgba(120, 160, 200, 0.5);
-  box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
+  background: rgba(24, 32, 48, 0.93);
+  background-image: none;
+  border-color: rgba(100, 130, 170, 0.48);
+  box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.52);
 }
 :root[data-theme="dark"] body[data-town="codex"] .signpost-link { color: #cfdfee; }
 :root[data-theme="dark"] body[data-town="codex"] .signpost-link.active {
@@ -636,6 +640,11 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1
   align-items: flex-end;   /* single-row 펫도 바닥 정렬 */
   align-content: flex-end; /* multi-row wrap 시에도 바닥부터 쌓임 */
   justify-content: center;  /* [A] lone pet / partial row 가로 중앙 정렬 */
+}
+/* [iter1] lobby card — crowd 를 speech-bubble(z:2) 위 레이어로 올려 펫/칩 가림 방지 */
+.room-card .crowd {
+  position: relative;
+  z-index: 4;
 }
 .crowd .more {
   display: flex; align-items: center; justify-content: center;
@@ -1259,7 +1268,7 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
 }
 /* [P0] lobby 카드 안 말풍선 — crowd 영역과의 collision 방지.
    occupant humanoid 는 top:100% (카드 발치 바깥) 에 위치하므로 bubble 을 충분히 높이 올려야
-   crowd 하단과 겹치지 않음. top:-130px 은 crowd 상단 경계보다 ~50px 위에 bubble 을 배치. */
+   crowd 하단과 겹치지 않음. [iter1] top:-158px + z:2 — activity-chip 과 gap, 펫 가림 해소. */
 .room-card .speech-bubble {
   max-width: 180px;
   /* nowrap → wrap : word 경계에서 자연 줄바꿈 (영문/한글 모두) */
@@ -1269,7 +1278,12 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
   line-height: 1.25;
   overflow: hidden;
   bottom: auto;
-  top: -136px;
+  top: -158px;
+  z-index: 2;
+}
+/* bubble 이 떠 있는 카드 — crowd 상단에 여백, chip 과 bubble 사이 gap */
+.room-card.has-speech-bubble .crowd {
+  padding-top: 8px;
 }
 .room-card .speech-bubble > span {
   display: -webkit-box;
@@ -2152,6 +2166,8 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
 .pet .activity-chip .chip-text  { font-family: var(--font-mono, ui-monospace, monospace); overflow: hidden; text-overflow: ellipsis; }
 
 .pet.mini .activity-chip { top: -8px; font-size: 8px; padding: 1px 5px; max-width: min(96px, 50vw); overflow: hidden; }
+/* [iter1] lobby crowd chip — bubble 레이어와 분리, 펫 위에 선명히 */
+.crowd .pet .activity-chip { z-index: 6; }
 
 .pet:not(.pet-busy) .activity-chip { display: none; }
 

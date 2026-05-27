@@ -3233,12 +3233,13 @@ function renderLobby(snap) {
     // 대표 세션 (가장 최근 활동) — 카드 발치에 humanoid 로 표시 (집 주인)
     const repSession = sessions.slice().sort((a, b) =>
       (b.last_activity || '').localeCompare(a.last_activity || ''))[0];
+    const repQuest = repSession ? humanQuestSummary(repSession) : null;
     const occupant = repSession
       ? `<div class="card-occupant">${humanCharacterHTML(repSession, { attached: true })}</div>`
       : '';
 
     return `
-      <div class="room-card${isActive ? ' active' : ''}" data-key="${escapeHtml(k)}">
+      <div class="room-card${isActive ? ' active' : ''}${repQuest ? ' has-speech-bubble' : ''}" data-key="${escapeHtml(k)}">
         <div class="room-title">
           <span class="door">${renderSprite('door', 2)}</span>
           <span>${escapeHtml(k)}</span>
