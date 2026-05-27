@@ -2053,6 +2053,21 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
 /* 꽃 — 분홍 꽃잎 + 초록 줄기 */
 .village-bg .vb.flower svg .px-L { fill: #e88aa8; }
 .village-bg .vb.flower svg .px-D { fill: #4a6024; }
+/* 들판 풀·꽃 — 미세 바람 sway (translate 앵커 보존) */
+.village-bg .vb.grass {
+  transform-origin: bottom center;
+  animation: meadow-sway-grass 6.5s ease-in-out infinite;
+}
+.village-bg .vb.grass + .vb.grass { animation-delay: 1.2s; }
+.village-bg .vb.grass + .vb.grass + .vb.grass { animation-delay: 2.4s; }
+.village-bg .vb.grass + .vb.grass + .vb.grass + .vb.grass { animation-delay: 3.6s; }
+.village-bg .vb.flower {
+  transform-origin: bottom center;
+  animation: meadow-sway-flower 8s ease-in-out infinite;
+}
+.village-bg .vb.flower + .vb.flower { animation-delay: 1.5s; }
+.village-bg .vb.flower + .vb.flower + .vb.flower { animation-delay: 3s; }
+.village-bg .vb.flower + .vb.flower + .vb.flower + .vb.flower { animation-delay: 4.5s; }
 /* 디딤돌 — 회갈색 */
 .village-bg .vb.stone svg .px-L  { fill: #b8a890; }
 .village-bg .vb.stone svg .px-D  { fill: #6e6050; }
@@ -2095,6 +2110,14 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
 @keyframes cloud-drift {
   0%, 100% { transform: translate(-50%, -50%); }
   50%      { transform: translate(calc(-50% + 24px), -50%); }
+}
+@keyframes meadow-sway-grass {
+  0%, 100% { transform: translate(-50%, -50%) rotate(-2.2deg); }
+  50%      { transform: translate(-50%, -50%) rotate(2.2deg); }
+}
+@keyframes meadow-sway-flower {
+  0%, 100% { transform: translate(-50%, -50%) rotate(-1.8deg); }
+  50%      { transform: translate(-50%, -50%) rotate(1.8deg); }
 }
 
 /* ambient bird flyby — sky layer, below lobby cards */
@@ -2145,6 +2168,7 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
 }
 @media (prefers-reduced-motion: reduce) {
   .bird-flyby { animation: none !important; }
+  .village-bg .vb.grass, .village-bg .vb.flower { animation: none !important; }
 }
 
 @media (max-width: 480px) {
