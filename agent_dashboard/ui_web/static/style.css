@@ -2082,7 +2082,11 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
 .village-bg .vb.lantern svg .px-A { fill: #f7c33a; }   /* 등불 노란빛 */
 .village-bg .vb.well svg .px-L { fill: #a89578; }
 .village-bg .vb.well svg .px-D { fill: #6e5a40; }
-.village-bg .vb.well svg .px-E { fill: #1a1a1a; }
+.village-bg .vb.well svg .px-E {
+  fill: #1e3a4a;
+  animation: water-shimmer 5.5s ease-in-out infinite;
+  animation-delay: 1.2s;
+}
 
 /* 원경 — 흐리게 atmospheric perspective */
 .village-bg .vb.distant { opacity: 0.55; filter: blur(0.3px); }
@@ -2096,6 +2100,17 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
   z-index: 1;
   filter: drop-shadow(0 1px 0 rgba(0,0,0,.18));
   image-rendering: pixelated;
+}
+
+/* 분수 basin 물 — 폴백 #1a1a1a override + 잔물결 shimmer */
+.lobby-fountain .sprite .px-E {
+  fill: #bfe4f5;
+  animation: water-shimmer 4.2s ease-in-out infinite;
+}
+
+@keyframes water-shimmer {
+  0%, 100% { opacity: 0.7; }
+  50%      { opacity: 1; }
 }
 
 /* 구름 wandering — lobby sky zone */
@@ -2169,6 +2184,8 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
 @media (prefers-reduced-motion: reduce) {
   .bird-flyby { animation: none !important; }
   .village-bg .vb.grass, .village-bg .vb.flower { animation: none !important; }
+  .lobby-fountain .sprite .px-E,
+  .village-bg .vb.well svg .px-E { animation: none !important; }
 }
 
 @media (max-width: 480px) {
