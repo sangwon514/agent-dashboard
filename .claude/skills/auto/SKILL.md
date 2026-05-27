@@ -6,6 +6,7 @@ description: |
   사용:
     /auto              — 시각 이슈 자동 진단 → Codex+Cursor 병렬 디스패치 → 검증 (개선거리 없으면 STOP)
     /auto <text>       — text 를 작업으로 받아 자동 진행 (lane 별로 분해 후 병렬)
+    /auto wild         — 창의 발산 단발: imagineer 가 "없어서 아쉬운 즐거움" 1건 제안 → 구현 → 검증 → STOP (루프 X)
     /auto stop         — 현재 세션 루프 강제 종료
     /auto status       — 현재 루프 상태 + 최근 로그
 ---
@@ -47,6 +48,7 @@ LOG_FILE="/tmp/agentville-out/auto-loop-${SESSION_ID}.log"
 
 - `stop` → STATE_FILE 비활성화, 종료 메시지.
 - `status` → STATE_FILE 내용 + LOG_FILE 마지막 10줄.
+- `wild` → **창의 발산 단발 모드** (아래 "Wild mode" 섹션). 수렴 루프와 분리된 single-shot.
 - 그 외 → 자율 루프 시작 (인자 비었으면 triage 모드, 있으면 directed 모드).
 
 ### `/auto stop`
@@ -69,7 +71,48 @@ echo "--- log (last 10) ---"
 tail -10 "$LOG_FILE" 2>/dev/null || echo "(로그 없음)"
 ```
 
-## Loop (parent executes)
+## Wild mode (`/auto wild`) — 창의 발산 단발
+
+**수렴 루프(아래 Loop)와 완전히 분리된 single-shot.** imagineer 가 "없어서 아쉬운 즐거움" 1건을 제안 → 구현 → 검증 → STOP. **절대 루프하지 않는다** (imagineer 는 아이디어가 무한해 "무이슈"라 말하지 않으므로, 1건 cap 으로 수렴 보장 유지).
+
+```bash
+# 상태: 별도 wild stage 로 기록 (재진입 가드는 동일)
+jq -n '{"active": true, "mode": "wild", "stage": "imagine", "fail_streak": 0, "iter": 1, "max_iters": 1, "task": "wild"}' > "$STATE_FILE"
+echo "✨ /auto wild — 창의 발산 단발 시작 (single-shot, 루프 X)"
+```
+
+### W1 — Imagine (imagineer 단발)
+
+Parent 가 `imagineer` 1회 호출 (read-only). 산출: `scratch/imagine-{ts}.md` + stdout `Top: <한 줄> (lane=…)`.
+
+- imagineer 는 현재 월드 인벤토리(SPRITES·데코·애니메이션) + 최신 스크린샷 + 외부 미감 레퍼런스를 보고 **빌드 가능한 1건**으로 좁힌다.
+- prompt 에 필수 fragment(아래 "Required prompt fragments") 인용 + **북극성 앵커**("Pixel Agents 방 안 캐릭터", dashboard/RPG 금지) 명시.
+
+### W2 — Spec (parent)
+
+Parent 가 imagineer 의 Top pick 을 읽고 `scratch/task-spec-{slug}.md` 작성 + lane 분류:
+- `static` → **Cursor** (`tools/dispatch.sh cursor`) — CSS/JS 앰비언트·미세 인터랙션
+- `sprite` → **pixel-artist** — 신규 16×16 ASCII 종/오브젝트 (필요시 cursor 가 배선)
+- `python` → **Codex** (드묾 — 보통 wild 은 static/sprite)
+
+sprite+static 동시 필요하면(예: 새 스프라이트 + 렌더 배선) **pixel-artist 먼저 → 결과를 cursor spec 에 포함** (순차).
+
+### W3 — Implement
+
+W2 의 lane 으로 디스패치 (Codex/Cursor 는 `tools/dispatch.sh` background, pixel-artist 는 Agent tool). `DISPATCH_RESULT=ok` → `git diff` 리뷰 → 머리가 커밋. 블로커면 COLLAB.md Case A (머리 takeover).
+
+### W4 — Verify
+
+Parent 가 `scene-tester` 1회 호출 — **(a) 렌더되나 (b) 회귀 없나 (c) 북극성 미감 유지(대시보드화 안 됐나)**. PASS/FAIL.
+
+### W5 — STOP (무조건 단발)
+
+- PASS → `STATE_FILE` `active=false, stage="done", stop_reason="wild-shipped"`. 3줄 보고.
+- FAIL → 1회 보정 시도 후 그래도 FAIL 이면 변경 revert 검토 + `stage="escalated"`. **재발산(W1) 으로 돌아가지 않는다.**
+
+→ 더 만들고 싶으면 사용자가 `/auto wild` 를 다시 부른다. 자동 연쇄 금지.
+
+## Loop (parent executes) — 수렴 모드 (`/auto`, `/auto <text>`)
 
 ### 0) 재진입 가드 + 상태 초기화
 
@@ -191,6 +234,7 @@ Parent 가 `scene-tester` 1회 호출 (delta mode — 직전 scene-report 와 di
 ```
 /auto
 /auto 펫이 떠 보이는 거 고쳐줘
+/auto wild       # imagineer 가 "없어서 아쉬운 즐거움" 1건 제안 → 구현 → 검증 (단발)
 /auto pixel-artist 한테 새 거북이 스프라이트 만들라고 시켜줘
 /auto status
 /auto stop

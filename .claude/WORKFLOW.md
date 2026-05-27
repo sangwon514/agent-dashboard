@@ -8,6 +8,7 @@
 |-------|------|------|
 | `/auto` | 자율 개선 루프 (시각 이슈 진단 → 디스패치 → 검증) | 최고 |
 | `/auto <text>` | 자연어 task 받아 자동 진행 | 높음 |
+| `/auto wild` | 창의 발산 단발 — imagineer 가 "없어서 아쉬운 즐거움" 1건 제안 → 구현 → 검증 (루프 X) | 중 |
 | `/auto status` | 현재 루프 상태 + 최근 로그 | 중 |
 | `/auto stop` | 루프 강제 종료 | 저 |
 | `/propose` | product-strategist 호출 — 비전 vs 현재 갭 분석 + 방향성 제안 | 중 |
@@ -50,12 +51,26 @@
 상태 파일: `/tmp/agentville-out/auto-loop-state-{session_id}.json`
 로그: `/tmp/agentville-out/auto-loop-{session_id}.log`
 
+### /auto wild 파이프라인 (창의 발산 단발)
+
+```
+/auto wild
+  ↓ W1  imagineer (단발)        → scratch/imagine-{ts}.md (Top pick 1건 + lane)
+  ↓ W2  parent: task-spec 작성 + lane 분류 (static→cursor / sprite→pixel-artist)
+  ↓ W3  implement (해당 hand)    → git diff 리뷰 → 머리 커밋
+  ↓ W4  scene-tester verify      → 렌더 + 회귀 + 미감(대시보드화 X)
+  ↓ W5  STOP (무조건 단발 — 재발산 루프 X)
+```
+
+수렴 루프와 분리: imagineer 는 아이디어가 무한해 "무이슈" 를 말하지 않으므로, **hard cap 1건 + single-shot** 으로 `/auto` 의 STOP 보장을 안 깬다. 더 원하면 사용자가 `/auto wild` 재호출.
+
 ## 에이전트 카탈로그
 
 | 에이전트 | 모델 | 호출 경로 | 역할 |
 |---------|------|----------|------|
 | `auto-orchestrator` | opus | parent (Phase 2 단발) | 보고서 2개 → 이슈 분류·task-spec 작성·dispatch plan 반환 (디스패칭 X) |
 | `product-strategist` | opus | `/propose` | 비전 vs 현재 갭 분석 + 방향성 제안 (코드 X) |
+| `imagineer` | opus | `/auto wild` (W1 단발) | 창의 발산 — additive delight 1건 제안 (`imagine-*.md`, 코드 X) |
 | `pixel-artist` | sonnet | parent (Phase 3) | 16×16 ASCII 스프라이트 그리드 |
 | `scene-tester` | sonnet | parent (Phase 1, 4) | Playwright 스크린샷 + 시각 이슈 보고 |
 | `ui-critic` | sonnet | parent (Phase 1) | 디자인 비평 (코드 X) |
@@ -76,14 +91,14 @@
 
 - **50줄+** = `/tmp/agentville-out/` 에 저장 후 Grep/Read
 - **에이전트 간 공유** = `.claude/scratch/` (gitignore, 휘발성)
-- **명명**: `{type}-{slug-or-ts}.md` — type ∈ {scene-report, ui-review, task-spec, done, proposal}
+- **명명**: `{type}-{slug-or-ts}.md` — type ∈ {scene-report, ui-review, task-spec, done, proposal, imagine}
 - 위임 프롬프트마다 위 두 룰 인용 의무
 
 ## 디렉토리 빠른 참조
 
 ```
 .claude/
-├── agents/             # 6 .md (위 카탈로그)
+├── agents/             # 7 .md (위 카탈로그)
 ├── skills/
 │   ├── auto/           # /auto SKILL.md
 │   └── propose/        # /propose SKILL.md

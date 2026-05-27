@@ -48,8 +48,9 @@
 | `scene-tester` | sonnet | Playwright 스크린샷 + 시각 이슈 보고서 (`scratch/scene-report-*.md`) |
 | `ui-critic` | sonnet | 디자인 의견 only — 코드 변경 X. Pixel Agents 레퍼런스 기준 비평 |
 | `frontend-dev` | sonnet | HTML/CSS/JS 구현. SSE 흐름·CSS keyframe·inline-SVG 스프라이트. **Python 미터치** |
+| `imagineer` | opus | `/auto wild` 가 부르는 창의 발산자. "없어서 아쉬운 즐거움"(앰비언트·미세 인터랙션·신규 스프라이트·이스터에그) 1건을 한 iter 빌드 크기로 좁혀 `imagine-*.md` 산출. 북극성("방 안 캐릭터") 앵커, 코드 X |
 
-**라우팅 원칙**: 스프라이트 그리드 → `pixel-artist` · CSS/JS 구현 → `frontend-dev` · 디자인 비평 → `ui-critic` · 시각 회귀 검증 → `scene-tester` · 프로젝트 방향성/스코프 갭 → `product-strategist` (`/propose`) · `/auto` 루프의 Decide 단계 → `auto-orchestrator` (단발). **fan-out/dispatching 은 항상 parent Claude 가 수행** — Claude Code 가 sub-agent 에 Agent tool 을 grant 하지 않기 때문. 일반 코드 작성도 parent 가 직접.
+**라우팅 원칙**: 스프라이트 그리드 → `pixel-artist` · CSS/JS 구현 → `frontend-dev` · 디자인 비평(빼라) → `ui-critic` · 창의 발산(더해라) → `imagineer` (`/auto wild`) · 시각 회귀 검증 → `scene-tester` · 프로젝트 방향성/스코프 갭 → `product-strategist` (`/propose`) · `/auto` 루프의 Decide 단계 → `auto-orchestrator` (단발). **fan-out/dispatching 은 항상 parent Claude 가 수행** — Claude Code 가 sub-agent 에 Agent tool 을 grant 하지 않기 때문. 일반 코드 작성도 parent 가 직접.
 
 ## 🪝 훅 카탈로그 (`.claude/hooks/`)
 
@@ -97,6 +98,7 @@ pytest -q > /tmp/agentville-out/test.txt 2>&1
   4. **Phase 4 — Verify**: parent 가 `scene-tester` 1회 호출 (delta mode)
   5. PASS + iter < max_iters → Phase 1 로 루프
 - **`/auto <text>`** → directed 모드. text 가 명시적이면 Phase 1 skip, parent 가 바로 task-spec 작성 후 Phase 3 으로.
+- **`/auto wild`** → 창의 발산 **단발**(single-shot, 수렴 루프와 분리). parent 가 `imagineer` 1회 호출 → "없어서 아쉬운 즐거움" 1건 → 구현(static/sprite lane) → `scene-tester` 검증(렌더+회귀+미감) → STOP. **절대 재발산 루프 안 함** (imagineer 는 "무이슈" 를 말하지 않으므로 1건 cap 이 수렴 가드). 더 원하면 사용자가 재호출.
 - **STOP 조건** (하나라도 충족 시 정지):
   1. 합의 무이슈 — scene-tester "no actionable" + ui-critic "no meaningful weaknesses"
   2. fail_streak ≥ 2 (verify 2회 연속 fail)
