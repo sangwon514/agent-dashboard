@@ -148,15 +148,26 @@ class Store:
         }
 
     def health(self) -> dict:
+        now = self._now()
         with self._lock:
             last = max(
                 (meta.get("last_activity") for meta in self._session_meta.values()),
+                default=None,
+            )
+            oldest_running_age_sec = max(
+                (
+                    max(0.0, (now - event.started_at).total_seconds())
+                    for events in self._transcript.values()
+                    for event in events.values()
+                    if event.status == "running"
+                ),
                 default=None,
             )
             return {
                 "last_event_at": last.isoformat() if last else None,
                 "session_count": len(self._transcript),
                 "parse_failures": dict(self._parse_failures),
+                "oldest_running_age_sec": oldest_running_age_sec,
             }
 
     @staticmethod

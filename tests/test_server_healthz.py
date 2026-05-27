@@ -28,6 +28,7 @@ def test_healthz_reports_watcher_status(monkeypatch):
         "last_event_at": None,
         "session_count": 0,
         "parse_failures": {"claude": 0, "codex": 0, "cursor": 0},
+        "oldest_running_age_sec": None,
     }
 
     monkeypatch.setattr(app.state.jsonl_watcher, "is_alive", lambda: False)

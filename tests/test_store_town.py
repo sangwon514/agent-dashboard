@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from agent_dashboard.core.codex_parser import parse_codex_jsonl
+from agent_dashboard.core.model import AgentEvent
 from agent_dashboard.core.parser import parse_jsonl
 from agent_dashboard.core.store import Store
 
@@ -87,6 +88,61 @@ def test_store_health_collects_parse_failures_by_tool():
         "codex": 0,
         "cursor": 0,
     }
+
+
+def test_store_health_reports_oldest_running_age_sec():
+    now_dt = datetime(2026, 5, 13, 10, 5, 0, tzinfo=timezone.utc)
+    store = Store(now=lambda: now_dt)
+    recent = {
+        "toolu_recent": AgentEvent(
+            source="transcript",
+            project_slug="-Users-x-p",
+            project_cwd="/Users/x/p",
+            session_id="sid-recent",
+            tool_use_id="toolu_recent",
+            subagent_type="explorer",
+            description="recent",
+            prompt_first_line="recent",
+            started_at=datetime(2026, 5, 13, 10, 3, 0, tzinfo=timezone.utc),
+        ),
+    }
+    oldest = {
+        "toolu_oldest": AgentEvent(
+            source="transcript",
+            project_slug="-Users-x-p",
+            project_cwd="/Users/x/p",
+            session_id="sid-oldest",
+            tool_use_id="toolu_oldest",
+            subagent_type="explorer",
+            description="oldest",
+            prompt_first_line="oldest",
+            started_at=datetime(2026, 5, 13, 10, 0, 0, tzinfo=timezone.utc),
+        ),
+    }
+    store.update_transcript(
+        Path("/Users/x/.claude/projects/-Users-x-p/sid-recent.jsonl"),
+        recent,
+    )
+    store.update_transcript(
+        Path("/Users/x/.claude/projects/-Users-x-p/sid-oldest.jsonl"),
+        oldest,
+    )
+
+    assert store.health()["oldest_running_age_sec"] == pytest.approx(300.0)
+
+
+def test_store_health_reports_none_when_no_running_events():
+    store = Store()
+    events = parse_jsonl(
+        CLAUDE_SAMPLE,
+        project_slug="p",
+        project_cwd="/p",
+        session_id="s",
+    )
+
+    store.update_transcript(Path("/x/s.jsonl"), events)
+
+    assert store.health()["oldest_running_age_sec"] is None
 
 
 def test_store_snapshot_events_include_age_sec():
