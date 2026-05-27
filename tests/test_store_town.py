@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 from pathlib import Path
 
+import pytest
+
 from agent_dashboard.core.codex_parser import parse_codex_jsonl
 from agent_dashboard.core.parser import parse_jsonl
 from agent_dashboard.core.store import Store
@@ -85,6 +87,46 @@ def test_store_health_collects_parse_failures_by_tool():
         "codex": 0,
         "cursor": 0,
     }
+
+
+def test_store_snapshot_events_include_age_sec():
+    now_dt = datetime(2026, 5, 13, 10, 3, 0, tzinfo=timezone.utc)
+    store = Store(now=lambda: now_dt)
+    events = parse_jsonl(
+        [
+            '{"timestamp":"2026-05-13T10:00:00Z","message":{"content":[{"type":"tool_use","name":"Agent","id":"toolu_age","input":{"subagent_type":"explorer","description":"find files","prompt":"go look"}}]}}'
+        ],
+        project_slug="-Users-x-p",
+        project_cwd="/Users/x/p",
+        session_id="sid-age",
+        now=now_dt,
+    )
+    store.update_transcript(Path("/Users/x/.claude/projects/-Users-x-p/sid-age.jsonl"), events)
+
+    event = store.snapshot()["sessions"][0]["events"][0]
+
+    assert isinstance(event["age_sec"], float)
+    assert event["age_sec"] >= 0.0
+    assert event["age_sec"] == pytest.approx(180.0)
+
+
+def test_store_snapshot_event_age_sec_clamps_future_timestamp():
+    now_dt = datetime(2026, 5, 13, 10, 0, 0, tzinfo=timezone.utc)
+    store = Store(now=lambda: now_dt)
+    events = parse_jsonl(
+        [
+            '{"timestamp":"2026-05-13T10:05:00Z","message":{"content":[{"type":"tool_use","name":"Agent","id":"toolu_future","input":{"subagent_type":"explorer","description":"find files","prompt":"go look"}}]}}'
+        ],
+        project_slug="-Users-x-p",
+        project_cwd="/Users/x/p",
+        session_id="sid-future",
+        now=now_dt,
+    )
+    store.update_transcript(Path("/Users/x/.claude/projects/-Users-x-p/sid-future.jsonl"), events)
+
+    event = store.snapshot()["sessions"][0]["events"][0]
+
+    assert event["age_sec"] == 0.0
 
 
 def test_live_snapshot_trims_slugless_and_stale():

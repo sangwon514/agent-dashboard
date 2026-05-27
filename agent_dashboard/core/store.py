@@ -175,6 +175,7 @@ class Store:
             "description": e.description,
             "prompt_first_line": e.prompt_first_line,
             "started_at": e.started_at.isoformat(),
+            "age_sec": max(0.0, (now - e.started_at).total_seconds()),
             "finished_at": e.finished_at.isoformat() if e.finished_at else None,
             "status": status,
             "is_error": e.is_error,
