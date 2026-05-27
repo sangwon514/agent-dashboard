@@ -2097,6 +2097,56 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
   50%      { transform: translate(calc(-50% + 24px), -50%); }
 }
 
+/* ambient bird flyby — sky layer, below lobby cards */
+.bird-flyby-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: visible;
+}
+.bird-flyby {
+  position: absolute;
+  top: var(--fly-top, 12%);
+  left: 0;
+  pointer-events: none;
+  animation-duration: var(--fly-duration, 10s);
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+.bird-flyby--ltr { animation-name: bird-fly-across-ltr; }
+.bird-flyby--rtl { animation-name: bird-fly-across-rtl; }
+.bird-flyby--rtl .sprite { transform: scaleX(-1); }
+.bird-flyby svg {
+  display: block;
+  image-rendering: pixelated;
+}
+@keyframes bird-fly-across-ltr {
+  0%    { left: -10%; transform: translateY(0); }
+  12.5% { left: 5%;   transform: translateY(calc(-1 * var(--bob-amp, 8px))); }
+  25%   { left: 20%;  transform: translateY(0); }
+  37.5% { left: 35%;  transform: translateY(var(--bob-amp, 8px)); }
+  50%   { left: 50%;  transform: translateY(0); }
+  62.5% { left: 65%;  transform: translateY(calc(-1 * var(--bob-amp, 8px))); }
+  75%   { left: 80%;  transform: translateY(0); }
+  87.5% { left: 95%;  transform: translateY(var(--bob-amp, 8px)); }
+  100%  { left: 110%; transform: translateY(0); }
+}
+@keyframes bird-fly-across-rtl {
+  0%    { left: 110%; transform: translateY(0); }
+  12.5% { left: 95%;  transform: translateY(calc(-1 * var(--bob-amp, 8px))); }
+  25%   { left: 80%;  transform: translateY(0); }
+  37.5% { left: 65%;  transform: translateY(var(--bob-amp, 8px)); }
+  50%   { left: 50%;  transform: translateY(0); }
+  62.5% { left: 35%;  transform: translateY(calc(-1 * var(--bob-amp, 8px))); }
+  75%   { left: 20%;  transform: translateY(0); }
+  87.5% { left: 5%;   transform: translateY(var(--bob-amp, 8px)); }
+  100%  { left: -10%; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bird-flyby { animation: none !important; }
+}
+
 @media (max-width: 480px) {
   header { gap: 6px; padding: 6px 12px; }
   .brand-sub { display: none; }

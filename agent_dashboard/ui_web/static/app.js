@@ -4222,6 +4222,35 @@ function renderCodexPreview() {
 // DOM 풀-재구축이 1프레임당 한 번만 발생하도록 보장.
 let _pendingSnap = null;
 let _rafScheduled = false;
+// ── Ambient bird flyby (lobby sky) — layer survives lobby re-render ──
+let _birdFlybyLayer = null;
+
+function preserveBirdFlybyLayer() {
+  const el = document.getElementById('bird-flyby-layer');
+  if (el) {
+    _birdFlybyLayer = el;
+    el.remove();
+  }
+}
+
+function restoreBirdFlybyLayer() {
+  if (currentRoom()) return;
+  const lobbyWrap = root.querySelector('.lobby-wrap');
+  if (!lobbyWrap) return;
+  if (!_birdFlybyLayer) {
+    _birdFlybyLayer = document.createElement('div');
+    _birdFlybyLayer.id = 'bird-flyby-layer';
+    _birdFlybyLayer.className = 'bird-flyby-layer';
+    _birdFlybyLayer.setAttribute('aria-hidden', 'true');
+  }
+  const vbg = lobbyWrap.querySelector('.village-bg');
+  if (vbg) vbg.after(_birdFlybyLayer);
+}
+
+function birdFlybyLayerEl() {
+  return document.getElementById('bird-flyby-layer') || _birdFlybyLayer;
+}
+
 function render(snap) {
   if (snap) _pendingSnap = snap;
   if (_rafScheduled) return;
@@ -4264,8 +4293,10 @@ function _renderImpl(snap) {
   summary.textContent = parts.join(' · ');
 
   const room = currentRoom();
+  preserveBirdFlybyLayer();
   const view = room ? renderRoom(snap, room) : renderLobby(snap);
   root.innerHTML = view + detailHTML(snap);
+  restoreBirdFlybyLayer();
   mountIcons();
 
   // 화이트보드 초기 텍스트
@@ -4385,6 +4416,78 @@ mountIcons(); // 정적 header chrome (brand-house, cog) 초기 마운트
 // ── Day/Night 초기 적용 + 10분마다 갱신 ──────────────────────────
 applyTimeOfDay();
 setInterval(applyTimeOfDay, 10 * 60 * 1000);
+
+// ── Ambient bird flyby — lobby sky, 1-at-a-time, scheduler survives re-render ──
+(function initBirdFlybyAmbient() {
+  if (new URLSearchParams(window.location.search).get('preview')) return;
+
+  const motionQ = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let activeBird = null;
+  let spawnTimer = null;
+  let firstSpawn = true;
+
+  function rand(min, max) {
+    return min + Math.random() * (max - min);
+  }
+
+  function scheduleNext() {
+    if (motionQ.matches) return;
+    clearTimeout(spawnTimer);
+    const delayMs = firstSpawn ? rand(3000, 6000) : rand(35000, 70000);
+    spawnTimer = setTimeout(spawnBird, delayMs);
+  }
+
+  function spawnBird() {
+    if (motionQ.matches) return;
+    if (activeBird) { scheduleNext(); return; }
+    if (currentRoom()) { scheduleNext(); return; }
+
+    restoreBirdFlybyLayer();
+    const layer = birdFlybyLayerEl();
+    if (!layer?.isConnected) { scheduleNext(); return; }
+
+    firstSpawn = false;
+
+    const ltr = Math.random() < 0.5;
+    const topPct = rand(5, 22);
+    const durationSec = rand(8, 14);
+    const bobPx = rand(6, 10);
+
+    const el = document.createElement('div');
+    el.className = 'bird-flyby' + (ltr ? ' bird-flyby--ltr' : ' bird-flyby--rtl');
+    el.style.setProperty('--fly-top', `${topPct}%`);
+    el.style.setProperty('--fly-duration', `${durationSec}s`);
+    el.style.setProperty('--bob-amp', `${bobPx}px`);
+    el.innerHTML = renderSprite('bird', 2);
+    el.setAttribute('aria-hidden', 'true');
+
+    activeBird = el;
+    layer.appendChild(el);
+
+    let cleaned = false;
+    const cleanup = () => {
+      if (cleaned) return;
+      cleaned = true;
+      el.remove();
+      if (activeBird === el) activeBird = null;
+      scheduleNext();
+    };
+    el.addEventListener('animationend', cleanup, { once: true });
+    setTimeout(cleanup, (durationSec + 2) * 1000);
+  }
+
+  motionQ.addEventListener('change', () => {
+    if (motionQ.matches) {
+      clearTimeout(spawnTimer);
+      spawnTimer = null;
+      if (activeBird) { activeBird.remove(); activeBird = null; }
+    } else {
+      scheduleNext();
+    }
+  });
+
+  scheduleNext();
+})();
 
 // ── Claude 토큰 사용량 헤더 표시 ─────────────────────────────────
 (function initUsageBar() {
