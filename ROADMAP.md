@@ -61,6 +61,37 @@
 | P9-4 | Slack 알림 (failure 발생 시 webhook) | 옵셔널 — *대기* |
 | P9-5 | Linear/Jira 자동 티켓 생성 (장기 failed 호출) | 과한 자동화 — *대기* |
 
+## P10 — 시각 폴리시 & 앰비언트 생명감 (다음 세션 이어서)
+
+> 추가: 2026-05-27 · `/auto` 5+ iter + `/auto wild` 도입 과정에서 쌓인 캐리오버.
+> 인프라 메모: cursor 헤드리스 언블록됨(`tools/dispatch.sh` PTY+`-f`, commit 28d9a22). `imagineer` 에이전트는 세션 시작 시 로드 → **다음 세션부터 `/auto wild` 가 머리 takeover 없이 실제 에이전트로 동작**.
+
+### P10-A — 교정 UI 폴리시 (`/auto` 수렴 모드)
+
+| # | 항목 | 우선 | 비고 |
+|---|------|------|------|
+| P10-A1 | **dark-mode speech-bubble override** | 높음 | iter2 에서 시작했다 중단됨. dark 에서 말풍선이 light cream 으로 떠 보임. `:root[data-theme="dark"] .speech-bubble` + tail(`::after/::before`) navy 적응. task-spec: `scratch/task-spec-iter2-darkbubble-searchbar.md` |
+| P10-A2 | **search bar at-rest 톤다운** | 중 | light mode 에서 검색창이 가장 밝은 객체 → 위계 역전(ui-critic should). 비포커스 시 들판에 녹고 focus 시 또렷. (P10-A1 과 동일 task-spec 에 묶여 있음) |
+| P10-A3 | room interior scale (dollhouse → 확대) | 중 | 방 floor 패널이 viewport ~50%, humanoid/펫 ~10px. `.scene` width/height 대공사라 별도 iter |
+| P10-A4 | signpost/placard label mid-word 절단 | 저 | "git-okest…" 하이픈/단어 경계 ellipsis 로 |
+| P10-A5 | active-card amber border 영속 → decay | 저 | tool-call 활동 없으면 border 사라지게(`:focus`만 highlight 등) |
+| P10-A6 | speech-bubble right-edge clip (저빈도 재현) | 저 | bubble TTL 로 노출 줄었으나 긴 quest 시 재확인 |
+
+> 머리 판정(false positive, 재대응 금지): "dark 타운 탭 strip 이 tan" — 실제는 navy 정상(specificity `:root[data-theme=dark] #town-signpost` 가 이김). scene-tester/ui-critic 오탐.
+
+### P10-B — 앰비언트 창의 후보 (`/auto wild` single-shot)
+
+> wild 첫 산출 = bird flyby(commit 591231c) 완료. 아래는 imagineer 발산에서 보류한 후속 1건씩.
+
+| # | 아이디어 | lane | 비고 |
+|---|---------|------|------|
+| P10-B1 | night 별 반짝임 + 가끔 별똥별 (`data-tod=night`) | static | 밤에만 보임 — 검증은 시계 조작/주입 필요 |
+| P10-B2 | 세션 완료 순간 그 집 펫이 폴짝 + 반짝 | static | delight 최상, 메타포 강화. 검증 타이밍이 관건 |
+| P10-B3 | 길고양이가 마을 가로질러 산책 (집 뒤 z-low) | static/sprite | cat 스프라이트 존재. 카드 z-order 주의 |
+| P10-B4 | evening/night 반딧불이 drift | static | 밤 한정 |
+| P10-B5 | night 집 창문에 불 켜짐 | static | 카드 장식화 표류 위험 — 신중 |
+| P10-B6 | 낮에 나비가 꽃 데코 주변 맴돔 | static/sprite | 꽃 위치 결합 복잡 |
+
 ## 의존성 / 호환
 
 - Python 3.11+ (Match 패턴, `dict[str, T]` 타입)
