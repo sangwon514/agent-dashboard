@@ -1266,26 +1266,22 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
   opacity: 0.75;
   font-size: 9px;
 }
-/* [P0] lobby 카드 안 말풍선 — crowd 영역과의 collision 방지.
-   occupant humanoid 는 top:100% (카드 발치 바깥) 에 위치하므로 bubble 을 충분히 높이 올려야
-   crowd 하단과 겹치지 않음. [iter1] top:-158px + z:2 — activity-chip 과 gap, 펫 가림 해소. */
-.room-card .speech-bubble {
+/* [iter1b] lobby 말풍선 — room-card 직속, 카드 상단 바깥 하늘 (occupant top:-158px 충돌 해소).
+   bottom:calc(100%+gap) 으로 카드 높이와 무관하게 메타/activity-chip 과 분리. tail 은 아래(카드) 향함. */
+.room-card > .speech-bubble.lobby-card-bubble {
   max-width: 180px;
-  /* nowrap → wrap : word 경계에서 자연 줄바꿈 (영문/한글 모두) */
   white-space: normal;
   word-break: normal;
   overflow-wrap: break-word;
   line-height: 1.25;
   overflow: hidden;
-  bottom: auto;
-  top: -158px;
+  top: auto;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 2;
 }
-/* bubble 이 떠 있는 카드 — crowd 상단에 여백, chip 과 bubble 사이 gap */
-.room-card.has-speech-bubble .crowd {
-  padding-top: 8px;
-}
-.room-card .speech-bubble > span {
+.room-card > .speech-bubble.lobby-card-bubble > span {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;

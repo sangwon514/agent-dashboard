@@ -2885,7 +2885,7 @@ function shortAlias(key) {
   return clean.slice(0, cutAt) + '…';
 }
 function humanCharacterHTML(s, opts = {}) {
-  const { x = 50, y = 50, attached = false, secondary = false, labelShift = 0 } = opts;       // % 단위 장면 내 위치 (attached=true 면 부모 CSS 가 위치 결정)
+  const { x = 50, y = 50, attached = false, secondary = false, labelShift = 0, noBubble = false } = opts;       // % 단위 장면 내 위치 (attached=true 면 부모 CSS 가 위치 결정)
   const labelText = shortAlias(projectKey(s));
   const sidFull = s.session_id || '';
   // breathe (3.6s) 용 phase — wall-clock 동기화
@@ -2923,7 +2923,7 @@ function humanCharacterHTML(s, opts = {}) {
     `--hair:${hairColor(hairHueIdx)}; --hair-dark:${hairColorDark(hairHueIdx)}; ` +
     posStyle;
   const extraClass = attached ? ' attached' : '';
-  const bubble = quest
+  const bubble = (!noBubble && quest)
     ? `<div class="speech-bubble"><span>${escapeHtml(quest)}</span></div>`
     : '';
   return `
@@ -3234,12 +3234,16 @@ function renderLobby(snap) {
     const repSession = sessions.slice().sort((a, b) =>
       (b.last_activity || '').localeCompare(a.last_activity || ''))[0];
     const repQuest = repSession ? humanQuestSummary(repSession) : null;
+    const lobbyBubble = repQuest
+      ? `<div class="speech-bubble lobby-card-bubble"><span>${escapeHtml(repQuest)}</span></div>`
+      : '';
     const occupant = repSession
-      ? `<div class="card-occupant">${humanCharacterHTML(repSession, { attached: true })}</div>`
+      ? `<div class="card-occupant">${humanCharacterHTML(repSession, { attached: true, noBubble: true })}</div>`
       : '';
 
     return `
-      <div class="room-card${isActive ? ' active' : ''}${repQuest ? ' has-speech-bubble' : ''}" data-key="${escapeHtml(k)}">
+      <div class="room-card${isActive ? ' active' : ''}" data-key="${escapeHtml(k)}">
+        ${lobbyBubble}
         <div class="room-title">
           <span class="door">${renderSprite('door', 2)}</span>
           <span>${escapeHtml(k)}</span>
