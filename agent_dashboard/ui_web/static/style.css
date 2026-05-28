@@ -2107,6 +2107,21 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
 :root[data-tod="morning"] .village-bg::before { --sky-strength: .35; }
 :root[data-tod="evening"] .village-bg::before { --sky-strength: .55; }
 :root[data-tod="night"]   .village-bg::before { --sky-strength: .8;  }
+.village-bg::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 60%;
+  background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 1) 100%);
+  opacity: var(--ground-strength, 0);
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 8s linear;
+}
+:root[data-tod="day"]     .village-bg::after { --ground-strength: 0; }
+:root[data-tod="morning"] .village-bg::after { --ground-strength: .02; }
+:root[data-tod="evening"] .village-bg::after { --ground-strength: .22; }
+:root[data-tod="night"]   .village-bg::after { --ground-strength: .42; }
 .vb-stars {
   position: absolute; left: 0; right: 0; top: 0; height: 30%;
   pointer-events: none; z-index: 0;
