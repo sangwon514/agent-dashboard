@@ -4383,6 +4383,38 @@ window.addEventListener('hashchange', () => { openDetail = null; render(lastSnap
 document.addEventListener('click', (e) => {
   const pet = e.target.closest('.pet[data-pet]');
   if (!pet) return;
+  if (pet.dataset.pet === '__egg__') {
+    e.stopPropagation();
+    const wrap = pet.querySelector('.sprite-wrap');
+    if (!wrap || pet.dataset.hatching === '1') return;
+    let n = (parseInt(pet.dataset.eggPokes || '0', 10) || 0) + 1;
+    if (n < 5) {
+      pet.dataset.eggPokes = String(n);
+      wrap.style.setProperty('--egg-amp', (3 + n * 2) + 'deg');
+      wrap.classList.remove('egg-wobble');
+      void wrap.offsetWidth;
+      wrap.classList.add('egg-wobble');
+      wrap.addEventListener('animationend', () => wrap.classList.remove('egg-wobble'), { once: true });
+    } else {
+      pet.dataset.hatching = '1';
+      pet.dataset.eggPokes = '0';
+      wrap.classList.remove('egg-wobble');
+      void wrap.offsetWidth;
+      wrap.classList.add('egg-hatch');
+      const spark = document.createElement('span');
+      spark.className = 'poke-heart';
+      spark.textContent = '✨';
+      spark.style.left = e.clientX + 'px';
+      spark.style.top = (e.clientY - 14) + 'px';
+      document.body.appendChild(spark);
+      spark.addEventListener('animationend', () => spark.remove(), { once: true });
+      wrap.addEventListener('animationend', () => {
+        wrap.classList.remove('egg-hatch');
+        delete pet.dataset.hatching;
+      }, { once: true });
+    }
+    return;
+  }
   const wrap = pet.querySelector('.sprite-wrap');
   if (wrap) {
     wrap.classList.remove('poked');
