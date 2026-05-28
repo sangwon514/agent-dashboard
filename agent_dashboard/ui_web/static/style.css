@@ -2071,6 +2071,23 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
 }
 
 .lobby-wrap { position: relative; min-height: 80vh; }
+/* 밤 베일 — 로비 전체(카드 포함)를 tod 에 따라 쿨하게 어둡게. multiply 로 어두워지되
+   텍스트(어두운 잉크) 대비는 보존. 카드(z:1) 위(z:5)에 깔려 "split-world"(하늘만 밤) 해소. */
+.lobby-wrap::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  mix-blend-mode: multiply;
+  background: linear-gradient(to bottom, #b6bcd8 0%, #7b83ac 100%);
+  opacity: var(--night-veil, 0);
+  transition: opacity 8s linear;
+}
+:root[data-tod="day"]     .lobby-wrap::after { --night-veil: 0; }
+:root[data-tod="morning"] .lobby-wrap::after { --night-veil: .06; background: linear-gradient(to bottom, #e7ddcb 0%, #d2c8be 100%); }
+:root[data-tod="evening"] .lobby-wrap::after { --night-veil: .38; background: linear-gradient(to bottom, #f2cb9c 0%, #b1714a 100%); }
+:root[data-tod="night"]   .lobby-wrap::after { --night-veil: .66; }
 .village-bg {
   position: absolute; inset: 0;
   pointer-events: none;
@@ -2105,8 +2122,8 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
 }
 :root[data-tod="day"]     .village-bg::after { --ground-strength: 0; }
 :root[data-tod="morning"] .village-bg::after { --ground-strength: .02; }
-:root[data-tod="evening"] .village-bg::after { --ground-strength: .22; }
-:root[data-tod="night"]   .village-bg::after { --ground-strength: .42; }
+:root[data-tod="evening"] .village-bg::after { --ground-strength: .12; }
+:root[data-tod="night"]   .village-bg::after { --ground-strength: .24; }
 .vb-stars {
   position: absolute; left: 0; right: 0; top: 0; height: 30%;
   pointer-events: none; z-index: 0;
