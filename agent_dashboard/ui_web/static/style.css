@@ -903,33 +903,18 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1
   left: 50%;
   /* card-occupant 는 translateY(16px) 로 카드 바닥에서 16px 아래 → mat 을 top:-24px
      올려 카드 하단 경계와 8px 정도 겹치게 = doorstep threshold. */
-  top: -24px;
+  top: -10px;
   transform: translateX(-50%);
-  width: 92px;
-  height: 20px;
-  background:
-    /* 풀잎 점박이 — 매트 가장자리 자생 풀밭, 대비 강화 */
-    radial-gradient(circle at 14% 38%, rgba(72, 110, 38, .9) 0 2px, transparent 2.5px),
-    radial-gradient(circle at 28% 62%, rgba(58, 95, 30, .85) 0 2px, transparent 2.5px),
-    radial-gradient(circle at 50% 32%, rgba(72, 110, 38, .9) 0 2px, transparent 2.5px),
-    radial-gradient(circle at 72% 60%, rgba(58, 95, 30, .85) 0 2px, transparent 2.5px),
-    radial-gradient(circle at 86% 35%, rgba(72, 110, 38, .9) 0 2px, transparent 2.5px),
-    /* 매트 본체 — 흙 톤 진하게 + 잔디 톤 한 겹 */
-    radial-gradient(ellipse 65% 75% at 50% 60%, rgba(90, 65, 30, .55) 0%, rgba(90, 65, 30, .28) 70%, transparent 100%),
-    radial-gradient(ellipse 75% 85% at 50% 45%, rgba(110, 135, 65, .42) 0%, rgba(110, 135, 65, .15) 75%, transparent 100%);
+  width: 64px;
+  height: 12px;
+  /* 발밑 부드러운 그림자 1겹 — 연잎/매트 느낌 제거, humanoid 를 지면에 앉히기만. */
+  background: radial-gradient(ellipse 50% 50% at 50% 50%, rgba(60, 45, 28, .30) 0%, rgba(60, 45, 28, .14) 55%, transparent 78%);
   border-radius: 50%;
   pointer-events: none;
   z-index: 1;        /* humanoid sprite(z:2) 아래 */
 }
 :root[data-theme="dark"] .card-occupant::before {
-  background:
-    radial-gradient(circle at 14% 38%, rgba(150, 200, 110, .95) 0 2px, transparent 2.5px),
-    radial-gradient(circle at 28% 62%, rgba(130, 180, 90, .9) 0 2px, transparent 2.5px),
-    radial-gradient(circle at 50% 32%, rgba(150, 200, 110, .95) 0 2px, transparent 2.5px),
-    radial-gradient(circle at 72% 60%, rgba(130, 180, 90, .9) 0 2px, transparent 2.5px),
-    radial-gradient(circle at 86% 35%, rgba(150, 200, 110, .95) 0 2px, transparent 2.5px),
-    radial-gradient(ellipse 65% 75% at 50% 60%, rgba(10, 8, 4, .65) 0%, rgba(10, 8, 4, .35) 70%, transparent 100%),
-    radial-gradient(ellipse 75% 85% at 50% 45%, rgba(60, 90, 45, .5) 0%, rgba(60, 90, 45, .2) 75%, transparent 100%);
+  background: radial-gradient(ellipse 50% 50% at 50% 50%, rgba(0, 0, 0, .45) 0%, rgba(0, 0, 0, .22) 55%, transparent 78%);
 }
 .card-occupant .human-char.attached {
   position: relative;
@@ -2184,6 +2169,15 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
 /* 신규 vb 요소 색 매핑 */
 .village-bg .vb.fence svg .px-L { fill: #c9a874; }
 .village-bg .vb.fence svg .px-D { fill: #6e4a25; }
+/* 펜스 가로대 — 기둥들을 위·아래 두 줄로 연결해 "막대기 줄" → 진짜 울타리. (.vb 아님: translate 미적용) */
+.village-bg .vb-fence-rail {
+  position: absolute;
+  height: 10px;
+  border-top: 3px solid #c9a874;
+  border-bottom: 3px solid #6e4a25;
+  pointer-events: none;
+  z-index: 0;
+}
 .village-bg .vb.signpost svg .px-L { fill: #c9a874; }
 .village-bg .vb.signpost svg .px-D { fill: #6e4a25; }
 .village-bg .vb.signpost svg .px-M { fill: #4a2a18; }
