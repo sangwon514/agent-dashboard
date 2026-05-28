@@ -2124,6 +2124,37 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
 :root[data-tod="morning"] .village-bg::after { --ground-strength: .02; }
 :root[data-tod="evening"] .village-bg::after { --ground-strength: .12; }
 :root[data-tod="night"]   .village-bg::after { --ground-strength: .24; }
+/* 들판 미세 텍스처 — 하단 50% 잔디/흙 점박이 (하늘·베일·소품 미터치) */
+.vb-ground-tex {
+  position: absolute;
+  left: 0; right: 0;
+  top: 50%; bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: var(--ground-tex-strength, .24);
+  transition: opacity 8s linear;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,.35) 12%, #000 28%);
+  mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,.35) 12%, #000 28%);
+  background-image:
+    radial-gradient(1.5px 1.5px at 10% 14%, rgba(168,176,106,.55) 0%, transparent 100%),
+    radial-gradient(1px 1px at 24% 42%, rgba(138,116,72,.4) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 38% 8%, rgba(168,176,106,.48) 0%, transparent 100%),
+    radial-gradient(1px 1px at 52% 58%, rgba(138,116,72,.38) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 64% 26%, rgba(168,176,106,.42) 0%, transparent 100%),
+    radial-gradient(1px 1px at 78% 68%, rgba(138,116,72,.36) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 90% 38%, rgba(168,176,106,.44) 0%, transparent 100%),
+    radial-gradient(1px 1px at 16% 76%, rgba(138,116,72,.32) 0%, transparent 100%),
+    radial-gradient(1px 1px at 44% 86%, rgba(168,176,106,.36) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 58% 72%, rgba(138,116,72,.34) 0%, transparent 100%),
+    radial-gradient(1px 1px at 72% 90%, rgba(168,176,106,.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 86% 16%, rgba(138,116,72,.34) 0%, transparent 100%);
+  background-size: 96px 96px;
+  background-repeat: repeat;
+}
+:root[data-tod="day"]     .vb-ground-tex { --ground-tex-strength: .26; }
+:root[data-tod="morning"] .vb-ground-tex { --ground-tex-strength: .24; }
+:root[data-tod="evening"] .vb-ground-tex { --ground-tex-strength: .14; }
+:root[data-tod="night"]   .vb-ground-tex { --ground-tex-strength: .07; }
 .vb-stars {
   position: absolute; left: 0; right: 0; top: 0; height: 30%;
   pointer-events: none; z-index: 0;

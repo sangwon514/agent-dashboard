@@ -3313,6 +3313,7 @@ function renderLobby(snap) {
 
   const villageBg = `
   <div class="village-bg" aria-hidden="true">
+    <div class="vb-ground-tex" aria-hidden="true"></div>
     <!-- 1) 하늘 / 원경 (top 0~30%) — 구름 + card 영역(15~40%) 으로 침투하는 distant 트리 -->
     <div class="vb-stars" aria-hidden="true"></div>
     <div class="deco-sky-body" style="left:82%; top:9%;">${renderSprite('deco_sun_moon', 2)}</div>
