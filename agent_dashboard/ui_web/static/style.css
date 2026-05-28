@@ -622,6 +622,11 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1
   pointer-events: none;
   z-index: 0;
 }
+/* night: pull the bright card field into the dark scene with a cool inset glow
+   on the edges (center stays light for text legibility). active cards keep their accent. */
+:root[data-tod="night"] .lobby-wrap .room-card:not(.active) {
+  box-shadow: inset 0 0 42px rgba(72,92,142,.18), var(--shadow);
+}
 .room-card:hover { transform: translateY(-2px); border-color: var(--accent); }
 .room-card.active {
   border-color: var(--accent);
