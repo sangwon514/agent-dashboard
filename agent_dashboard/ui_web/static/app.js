@@ -3276,6 +3276,8 @@ function renderLobby(snap) {
   const villageBg = `
   <div class="village-bg" aria-hidden="true">
     <!-- 1) 하늘 / 원경 (top 0~30%) — 구름 + card 영역(15~40%) 으로 침투하는 distant 트리 -->
+    <div class="vb-stars" aria-hidden="true"></div>
+    <div class="deco-sky-body" style="left:82%; top:9%;">${renderSprite('deco_sun_moon', 2)}</div>
     <div class="vb cloud" style="left: 6%;  top: 4%;">${renderSprite('cloud-small', 2)}</div>
     <div class="vb cloud" style="left: 28%; top: 10%;">${renderSprite('cloud-small', 1)}</div>
     <div class="vb cloud" style="left: 52%; top: 5%;">${renderSprite('cloud-small', 2)}</div>
