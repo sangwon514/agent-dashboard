@@ -2734,6 +2734,13 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
 :root[data-tod="night"]   .deco-sky-body .sprite .frame-1 { opacity: 0; }
 :root[data-tod="evening"] .deco-sky-body .sprite .frame-2,
 :root[data-tod="night"]   .deco-sky-body .sprite .frame-2 { opacity: 1; }
+/* 천체 전용 색 — 전역 .sprite px 폴백(갈색 #c4a484/#6b5435/살구 #f7c1a8)을 덮어
+   해는 노랗게(밝은 하늘에서도 보이게), 달은 창백하게. frame 별로 스코프해 섞이지 않게. */
+.deco-sky-body .sprite .px-A.frame-1 { fill: #ffcf3a; }   /* 해 본체 — 금빛 노랑 */
+.deco-sky-body .sprite .px-L.frame-1 { fill: #ffe79e; }   /* 해 halo — 옅은 노랑 */
+.deco-sky-body .sprite .px-D.frame-1 { fill: #e8a020; }   /* 해 외곽 — 따뜻한 호박 */
+.deco-sky-body .sprite .px-L.frame-2 { fill: #eaf0fb; }   /* 달 본체 — 창백한 달빛 */
+.deco-sky-body .sprite .px-D.frame-2 { fill: #aab6cc; }   /* 달 외곽 — 부드러운 청회색 */
 
 /* ── 방 안 — 키 큰 책장 ──────────────────────────────────── */
 .deco-bookshelf-tall {
