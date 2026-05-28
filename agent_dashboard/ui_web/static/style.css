@@ -2279,6 +2279,12 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
   display: block;
   image-rendering: pixelated;
 }
+/* 비행 새 실루엣 색 — 하늘 배경에 읽히는 슬레이트 그레이 (펫 갈색 폴백 대체) */
+.bird-flyby .sprite .px-D { fill: #5b6470; }
+.bird-flyby .sprite .px-L { fill: #8b95a4; }
+/* 날개 퍼덕임 — frame-1(위)↔frame-2(아래) 토글 (pet walk-cycle tick 재사용) */
+.bird-flyby .sprite.two-frame .frame-1 { animation: tick-on  0.4s steps(1) infinite; }
+.bird-flyby .sprite.two-frame .frame-2 { animation: tick-off 0.4s steps(1) infinite; }
 @keyframes bird-fly-across-ltr {
   0%    { left: -10%; transform: translateY(0); }
   12.5% { left: 5%;   transform: translateY(calc(-1 * var(--bob-amp, 8px))); }

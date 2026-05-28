@@ -2437,39 +2437,77 @@ const SPRITES = {
   ],
   // 천체 — frame1: 낮 태양, frame2: 밤 초승달 + 별. data-tod 로 CSS 가 프레임 토글
   deco_sun_moon: [[
-    "................",
-    "......LLLL......",   // halo top (4px, cols 6-9)
-    ".....LDDDDLL....",   // halo + D outline arc (asymmetric: LL right side)
-    "....LDAAAAADL...",   // sun body (A = yellow accent, D outline, L halo)
-    "....LDAAAALLD...",   // sun body — right halo LL (2px) vs left L (1px) — asymmetry
-    ".....LDDDDLL....",   // halo + D outline arc
-    "......LLLL......",   // halo bottom
-    "................",
-    "................",
-    "................",
-    "................",
-    "................",
-    "................",
-    "................",
-    "................",
-    "................",
+    "................",   // row 0
+    ".....LDDDDL.....",   // row 1: top arc — L halo outside 4px D cap (cols 5,10=L; 6-9=D)
+    "...LDAAAAAADL...",   // row 2: stepped wider — L at 3,12; D at 4,11; 6A at 5-10
+    "..LDAAAAAAAADL..",   // row 3: wider — L at 2,13; D at 3,12; 8A at 4-11
+    "..LDAAAAAAAADL..",   // row 4: widest band (same)
+    "..LDAAAAAAAADL..",   // row 5: widest band
+    "..LDAAAAAAAADL..",   // row 6: widest band
+    "...LDAAAAAADL...",   // row 7: stepped narrower (mirrors row 2)
+    ".....LDDDDL.....",   // row 8: bottom arc (mirrors row 1)
+    "................",   // row 9
+    "................",   // row 10
+    "................",   // row 11
+    "................",   // row 12
+    "................",   // row 13
+    "................",   // row 14
+    "................",   // row 15
   ], [
-    "................",
-    "....DDDD........",   // moon arc top (4px, cols 4-7)
-    "...DLLLDD.......",   // crescent body: L interior, D right edge curves off
-    "..DLLLLL.D......",   // inner concave curve (. = transparent bite)
-    "..DLLLLL.D......",   // inner concave curve
-    "...DLLLDD.......",   // crescent body
-    "....DDDD........",   // moon arc bottom
-    "................",
-    "..........LL....",   // star (2px min end-cap, cols 10-11)
-    "................",
-    "................",
-    "................",
-    "................",
-    "................",
-    "................",
-    "................",
+    "................",   // row 0
+    "......LLL.......",   // row 1: 상단 horn (오른쪽 향함)
+    ".....LLLL.......",   // row 2
+    "....LLLL........",   // row 3: 오른쪽 가장자리 오목해지기 시작
+    "...LLLL.........",   // row 4: 왼쪽 볼록
+    "...LLL..........",   // row 5: belly — 왼쪽 최대 볼록, 오른쪽 최대 오목 = crescent bite
+    "...LLLL.........",   // row 6
+    "....LLLL........",   // row 7
+    ".....LLLL.......",   // row 8
+    "......LLL.......",   // row 9: 하단 horn — C 자 완성(오른쪽 열림)
+    "...........L....",   // row 10: 별(+ 모양 sparkle, 달과 안 겹침)
+    "..........LLL...",   // row 11
+    "...........L....",   // row 12
+    "................",   // row 13
+    "................",   // row 14
+    "................",   // row 15
+  ]],
+  // 비행 새 실루엣 — 날개 편 갈매기 "M" 형, 16×16, 2-frame 퍼덕임
+  // frame1: 날개 살짝 위 / frame2: 날개 살짝 아래. flyby ambient 전용.
+  // 색: D=어두운 실루엣, L=몸통 하이라이트
+  "bird-fly": [[
+    "................",   // row 0
+    "................",   // row 1
+    "................",   // row 2
+    "..DD........DD..",   // row 3: wingtips UP high (2px each: L cols 2-3, R cols 12-13)
+    "....DDDD.DDDD...",   // row 4: wings angle down-inward (L 4-7, gap col 8, R 9-12) — M notch
+    ".....DDDDD......",   // row 5: body where wings meet (5px, cols 5-9)
+    "......DDD.......",   // row 6: tail (3px, cols 6-8)
+    "................",   // row 7
+    "................",   // row 8
+    "................",   // row 9
+    "................",   // row 10
+    "................",   // row 11
+    "................",   // row 12
+    "................",   // row 13
+    "................",   // row 14
+    "................",   // row 15
+  ], [
+    "................",   // row 0
+    "................",   // row 1
+    "................",   // row 2
+    "................",   // row 3: tips gone — whole wing shifted down 1 row
+    "..DD........DD..",   // row 4: wingtips now at row 4 (wings dipping)
+    "....DDDD.DDDD...",   // row 5: wings angling (same M shape, 1 row lower)
+    ".....DDDDD......",   // row 6: body (1 row lower)
+    "......DDD.......",   // row 7: tail (1 row lower)
+    "................",   // row 8
+    "................",   // row 9
+    "................",   // row 10
+    "................",   // row 11
+    "................",   // row 12
+    "................",   // row 13
+    "................",   // row 14
+    "................",   // row 15
   ]],
   // 키 큰 책장 — 세로 14px × 가로 11px, 4단 선반, 책 3권/단, 하단 base 돌출
   deco_bookshelf_tall: [
@@ -4531,7 +4569,7 @@ setInterval(applyTimeOfDay, 10 * 60 * 1000);
     el.style.setProperty('--fly-top', `${topPct}%`);
     el.style.setProperty('--fly-duration', `${durationSec}s`);
     el.style.setProperty('--bob-amp', `${bobPx}px`);
-    el.innerHTML = renderSprite('bird', 2);
+    el.innerHTML = renderSprite('bird-fly', 2);
     el.setAttribute('aria-hidden', 'true');
 
     activeBird = el;
