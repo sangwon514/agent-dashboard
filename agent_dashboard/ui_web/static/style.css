@@ -1121,6 +1121,18 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1
   animation: human-celebrate 0.9s ease-out infinite;
 }
 
+/* 펫 done 순간 keeper 1회성 환호 — char↔char 반응 */
+@keyframes human-cheer {
+  0%   { transform: translateY(0) scale(1); }
+  30%  { transform: translateY(-7px) scale(1.05); }
+  55%  { transform: translateY(-1px) scale(1.0); }
+  75%  { transform: translateY(-4px) scale(1.03); }
+  100% { transform: translateY(0) scale(1); }
+}
+.human-char.human-cheer .human-wrap {
+  animation: human-cheer .7s ease-out 1;
+}
+
 /* ── humanoid idle variants — 작업 안 할 때 3종 모션 (session_id 해시로 결정) ── */
 @keyframes human-idle-look {
   0%, 100% { transform: scale(1.18) translateX(0); }
@@ -2241,6 +2253,7 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
   .pet[data-pet="__egg__"] .sprite-wrap.egg-wobble,
   .pet[data-pet="__egg__"] .sprite-wrap.egg-hatch { animation: none !important; }
   .poke-heart { animation: poke-heart-fade .6s ease-out forwards !important; }
+  .human-char.human-cheer .human-wrap { animation: none !important; }
 }
 
 @media (max-width: 480px) {

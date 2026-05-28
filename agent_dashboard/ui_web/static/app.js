@@ -2874,6 +2874,8 @@ function humanColor(sessionId) {
   return { hue: h % 360, faceHue: 25 + (h % 30) - 15 };  // 옷 색만 다양
 }
 
+const _keeperCheered = new Set();   // done 이벤트당 1회만 keeper cheer (재렌더 jitter 방지)
+
 function shortAlias(key) {
   const seg = (key || '').split('/').filter(Boolean).pop() || key || '';
   const clean = seg.replace(/^\./, '');
@@ -2893,11 +2895,18 @@ function humanCharacterHTML(s, opts = {}) {
   const hc = humanColor(s.session_id);
   // 활동도: 펫 중 하나라도 busy 면 작업 중 → 살짝 더 활기
   const isWorking = (s.pets || []).some(p => p.state === 'busy');
+  // 펫이 막 done 된 순간 → 이 집 keeper 가 1회성 환호 (done 이벤트당 1회)
+  const donePet = (s.pets || []).find(p => p.state === 'done');
+  let justCheer = false;
+  if (donePet && donePet.latest) {
+    const cheerKey = (s.session_id || '') + ':' + eventTime(donePet.latest);
+    if (!_keeperCheered.has(cheerKey)) { _keeperCheered.add(cheerKey); justCheer = true; }
+  }
   const humanTag = isWorking ? humanActivityTagFor(s) : null;
   const idleVariant = isWorking ? '' : ' ' + humanIdleVariant(s.session_id);
   const quest = humanQuestSummary(s);
   const secondaryCls = secondary ? ' secondary' : '';
-  const cls = `human-char${isWorking ? ' working' : ''}${humanTag ? ' human-tag-' + humanTag : ''}${idleVariant}${attached ? '' : ' in-scene'}${secondaryCls}`;
+  const cls = `human-char${isWorking ? ' working' : ''}${humanTag ? ' human-tag-' + humanTag : ''}${idleVariant}${attached ? '' : ' in-scene'}${secondaryCls}${justCheer ? ' human-cheer' : ''}`;
   const sprite = renderSprite('human', 3);
   // 머리카락 variant — session_id 해시로 결정
   const HAIR_VARIANTS = ['hair-short', 'hair-long', 'hair-bun', 'hair-spiky', 'hair-ponytail'];
