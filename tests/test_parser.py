@@ -14,6 +14,17 @@ def _now() -> datetime:
     return datetime(2026, 5, 8, 1, 5, 0, tzinfo=timezone.utc)
 
 
+def _parse_fixture(name: str, *, now: datetime | None = None):
+    with (FIXTURES / name).open() as f:
+        return parse_jsonl(
+            f,
+            project_slug="test-slug",
+            project_cwd="/tmp/test",
+            session_id=f"sess-{name}",
+            now=now or _now(),
+        )
+
+
 class ParseJsonlTests(unittest.TestCase):
     def setUp(self):
         self.path = FIXTURES / "sample.jsonl"
@@ -88,6 +99,46 @@ class ParseJsonlTests(unittest.TestCase):
     def test_prompt_first_line_truncated(self):
         ev = self.events["tu-002"]
         self.assertEqual(ev.prompt_first_line, "Review the current branch.")
+
+    def test_sidechain_subagent_extracted(self):
+        events = _parse_fixture(
+            "sidechain_subagent.jsonl",
+            now=datetime(2026, 5, 8, 2, 5, 0, tzinfo=timezone.utc),
+        )
+
+        self.assertEqual(set(events.keys()), {"sc-parent", "sc-child"})
+        parent = events["sc-parent"]
+        child = events["sc-child"]
+
+        self.assertEqual(parent.status, "done")
+        self.assertEqual(parent.subagent_type, "explorer")
+        self.assertEqual(parent.description, "Explore parser sidechain handling")
+        self.assertEqual(parent.duration_sec, 120.0)
+
+        self.assertEqual(child.status, "done")
+        self.assertEqual(child.subagent_type, "code-reviewer")
+        self.assertEqual(child.prompt_first_line, "Review sidechain fixture coverage.")
+        self.assertEqual(child.duration_sec, 45.0)
+        self.assertEqual(events.parse_failures, 0)
+
+    def test_malformed_does_not_raise(self):
+        events = _parse_fixture(
+            "malformed_edge.jsonl",
+            now=datetime(2026, 5, 8, 3, 5, 0, tzinfo=timezone.utc),
+        )
+
+        self.assertEqual(set(events.keys()), {"edge-missing-ts", "edge-partial"})
+        self.assertEqual(events.parse_failures, 1)
+
+        missing_ts = events["edge-missing-ts"]
+        self.assertEqual(missing_ts.subagent_type, "explorer")
+        self.assertEqual(missing_ts.description, "Missing timestamp still parses")
+        self.assertEqual(missing_ts.prompt_first_line, "Handle missing timestamp")
+
+        partial = events["edge-partial"]
+        self.assertIsNone(partial.subagent_type)
+        self.assertEqual(partial.description, "")
+        self.assertEqual(partial.prompt_first_line, "")
 
 
 class DisplayNameTests(unittest.TestCase):

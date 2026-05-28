@@ -1,0 +1,6 @@
+{"type":"assistant","sessionId":"sess-edge","message":{"role":"assistant","content":[{"type":"tool_use","id":"edge-missing-ts","name":"Agent","input":{"description":"Missing timestamp still parses","subagent_type":"explorer","prompt":"Handle missing timestamp"}}]}}
+{"type":"assistant","sessionId":"sess-edge","timestamp":"2026-05-08T03:00:05Z","message":{"role":"assistant","content":[]}}
+{"type":"assistant","sessionId":"sess-edge","timestamp":"2026-05-08T03:00:10Z","message":{"role":"assistant"}}
+{"type":"assistant","sessionId":"sess-edge","timestamp":"2026-05-08T03:00:15Z","message":{"role":"assistant","content":[null,"text",{"type":"tool_use","name":"Agent"},{"type":"tool_use","id":"edge-partial","name":"Agent","input":"truncated input"}]}}
+{"type":"assistant","sessionId":"sess-edge","timestamp":"2026-05-08T03:00:20Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"edge-broken"
+{"type":"user","sessionId":"sess-edge","timestamp":"2026-05-08T03:00:25Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"unknown-tool","is_error":false}]}}
