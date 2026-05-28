@@ -3337,42 +3337,37 @@ function renderLobby(snap) {
     <div class="vb tree"  style="left: 94%; top: 40%;">${renderSprite('tree-pine', 2)}</div>
     <div class="vb tree"  style="left: 17%; top: 52%;">${renderSprite('tree-bush', 2)}</div>
     <div class="vb tree"  style="left: 83%; top: 52%;">${renderSprite('tree-bush', 2)}</div>
-    <div class="vb lantern" style="left: 21%; top: 56%;">${renderSprite('lantern-post', 2)}</div>
-    <div class="vb lantern" style="left: 79%; top: 56%;">${renderSprite('lantern-post', 2)}</div>
+    <div class="vb lantern" style="left: 14%; top: 66%;">${renderSprite('lantern-post', 2)}</div>
+    <div class="vb lantern" style="left: 86%; top: 66%;">${renderSprite('lantern-post', 2)}</div>
     <div class="vb signpost" style="left: 50%; top: 50%;">${renderSprite('signpost', 2)}</div>
 
-    <!-- 3) 전경 (top 62~95%) — corner 큰 나무 framing + 연속 펜스로 하단 닫기(중앙 게이트) + 게이트→분수 길 + 구조물 주변 풀·꽃 군집 -->
+    <!-- 3) 전경 (top 62~95%) — corner 나무 framing + 두 yard fence cluster(중앙 38~63% 게이트, 0~14%/86~100% flank clear) -->
     <div class="vb tree"  style="left: 3%;  top: 66%;">${renderSprite('tree-pine', 3)}</div>
     <div class="vb tree"  style="left: 97%; top: 64%;">${renderSprite('tree-pine', 3)}</div>
-    <!-- 연속 펜스 라인 (edge→edge, 중앙 44~56% 는 게이트 갭) — 가로대가 기둥을 연결 -->
-    <div class="vb-fence-rail" style="left: 5%; width: 35%; top: 70.5%;"></div>
-    <div class="vb-fence-rail" style="left: 60%; width: 35%; top: 70.5%;"></div>
-    <div class="vb fence" style="left: 5%;  top: 72%;">${renderSprite('fence-post', 2)}</div>
-    <div class="vb fence" style="left: 12%; top: 72%;">${renderSprite('fence-post', 2)}</div>
-    <div class="vb fence" style="left: 19%; top: 72%;">${renderSprite('fence-post', 2)}</div>
-    <div class="vb fence" style="left: 26%; top: 72%;">${renderSprite('fence-post', 2)}</div>
-    <div class="vb fence" style="left: 33%; top: 72%;">${renderSprite('fence-post', 2)}</div>
-    <div class="vb fence" style="left: 40%; top: 72%;">${renderSprite('fence-post', 2)}</div>
-    <div class="vb fence" style="left: 60%; top: 72%;">${renderSprite('fence-post', 2)}</div>
-    <div class="vb fence" style="left: 67%; top: 72%;">${renderSprite('fence-post', 2)}</div>
-    <div class="vb fence" style="left: 74%; top: 72%;">${renderSprite('fence-post', 2)}</div>
-    <div class="vb fence" style="left: 81%; top: 72%;">${renderSprite('fence-post', 2)}</div>
-    <div class="vb fence" style="left: 88%; top: 72%;">${renderSprite('fence-post', 2)}</div>
-    <div class="vb fence" style="left: 95%; top: 72%;">${renderSprite('fence-post', 2)}</div>
-    <!-- 중앙 길: 게이트 갭 → 분수(중앙 하단) 로 이어지는 디딤돌 -->
+    <!-- 좌 yard fence (15~36%, 폭 21%) -->
+    <div class="vb-fence-rail" style="left: 15%; width: 21%; top: 70.5%;"></div>
+    <div class="vb fence" style="left: 15%; top: 72%;">${renderSprite('fence-post', 2)}</div>
+    <div class="vb fence" style="left: 22%; top: 72%;">${renderSprite('fence-post', 2)}</div>
+    <div class="vb fence" style="left: 29%; top: 72%;">${renderSprite('fence-post', 2)}</div>
+    <div class="vb fence" style="left: 36%; top: 72%;">${renderSprite('fence-post', 2)}</div>
+    <!-- 우 yard fence (64~85%, 폭 21%) -->
+    <div class="vb-fence-rail" style="left: 64%; width: 21%; top: 70.5%;"></div>
+    <div class="vb fence" style="left: 64%; top: 72%;">${renderSprite('fence-post', 2)}</div>
+    <div class="vb fence" style="left: 71%; top: 72%;">${renderSprite('fence-post', 2)}</div>
+    <div class="vb fence" style="left: 78%; top: 72%;">${renderSprite('fence-post', 2)}</div>
+    <div class="vb fence" style="left: 85%; top: 72%;">${renderSprite('fence-post', 2)}</div>
+    <!-- 중앙 길: 게이트 갭 → 분수 디딤돌 -->
     <div class="vb stone"  style="left: 50%; top: 79%;">${renderSprite('path-stone', 2)}</div>
     <div class="vb stone"  style="left: 50%; top: 86%;">${renderSprite('path-stone', 2)}</div>
-    <!-- 우물 — 오른쪽 마당 -->
+    <!-- 우물 — 우 yard -->
     <div class="vb well"  style="left: 72%; top: 83%;">${renderSprite('well', 3)}</div>
-    <!-- 풀·꽃 군집: 펜스 양끝 + 우물 옆 + 게이트 입구 (흩뿌리지 않고 구조물에 붙임) -->
-    <div class="vb grass" style="left: 8%;  top: 80%;">${renderSprite('grass-tuft', 1)}</div>
-    <div class="vb flower" style="left: 12%; top: 82%;">${renderSprite('flower', 2)}</div>
-    <div class="vb grass" style="left: 89%; top: 80%;">${renderSprite('grass-tuft', 1)}</div>
-    <div class="vb flower" style="left: 92%; top: 82%;">${renderSprite('flower', 2)}</div>
-    <div class="vb grass" style="left: 66%; top: 88%;">${renderSprite('grass-tuft', 1)}</div>
-    <div class="vb flower" style="left: 78%; top: 88%;">${renderSprite('flower', 2)}</div>
-    <div class="vb flower" style="left: 43%; top: 84%;">${renderSprite('flower', 2)}</div>
-    <div class="vb grass" style="left: 57%; top: 84%;">${renderSprite('grass-tuft', 1)}</div>
+    <!-- 풀·꽃 cluster: 좌 yard (15~35%) + 우 yard (65~85%), 중앙 43~57% clear -->
+    <div class="vb grass" style="left: 18%; top: 80%;">${renderSprite('grass-tuft', 1)}</div>
+    <div class="vb flower" style="left: 25%; top: 82%;">${renderSprite('flower', 2)}</div>
+    <div class="vb flower" style="left: 33%; top: 80%;">${renderSprite('flower', 2)}</div>
+    <div class="vb grass" style="left: 67%; top: 80%;">${renderSprite('grass-tuft', 1)}</div>
+    <div class="vb flower" style="left: 78%; top: 82%;">${renderSprite('flower', 2)}</div>
+    <div class="vb grass" style="left: 84%; top: 80%;">${renderSprite('grass-tuft', 1)}</div>
     <!-- 4) 로비 deco — 마을 소품 (fallback: signpost/lantern-post/well) -->
     <div class="lobby-deco lobby-village-sign" style="left:8%; bottom:5%;">${renderSprite('deco_village_sign', 3) || renderSprite('signpost', 3)}</div>
     <div class="lobby-deco lobby-bench" style="right:12%; bottom:8%;">${renderSprite('deco_bench', 3) || renderSprite('lantern-post', 3)}</div>
