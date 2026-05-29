@@ -44,7 +44,7 @@ set +e
 case "$TOOL" in
   codex)  codex exec -C "$ROOT" -s workspace-write "$PROMPT" </dev/null 2>&1 | tee "$LOG"; rc=${PIPESTATUS[0]};;
   # script -q /dev/null: cursor-agent -p 는 PTY 가 없으면 저장된 토큰을 안 읽고 sign-in splash 로 빠진다. -f 는 workspace-trust 자동 승인.
-  cursor) ( cd "$ROOT" && script -q /dev/null cursor-agent -p -f --output-format text "$PROMPT" </dev/null ) 2>&1 | tee "$LOG"; rc=${PIPESTATUS[0]};;
+  cursor) ( cd "$ROOT" && script -q /dev/null cursor-agent -p -f --model auto --output-format text "$PROMPT" </dev/null ) 2>&1 | tee "$LOG"; rc=${PIPESTATUS[0]};;
 esac
 set -e
 
