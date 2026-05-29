@@ -166,14 +166,15 @@ header {
 }
 .signpost-label { letter-spacing: 0.02em; }
 .signpost-count {
-  font-size: 9px;
+  font-size: 11px;
+  font-weight: 600;
   background: rgba(80, 50, 20, 0.55);
   color: #faecc7;
   border-radius: 8px;
   padding: 0 5px;
-  /* [iter5] 36px = 1자리·2자리 카운트 모두 동일 폭 pill → 마을 탭 리듬 통일.
-     scene-tester 가 반복 지적한 "19" vs "1" 폭 gap 해소 (28px 는 2자리 초과). */
-  min-width: 36px; text-align: center;
+  /* [iter6] 20px = 1자리 숫자가 pill 안에서 또렷이 읽히게(이전 36px 는 단일 digit 을
+     넓은 필드에 방치 → "JJ" 오독 유발). tabular-nums 로 "19"도 폭 점프 없이 수용. */
+  min-width: 20px; text-align: center;
   font-variant-numeric: tabular-nums;
 }
 .signpost-link.active .signpost-count {
