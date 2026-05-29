@@ -3337,8 +3337,8 @@ function renderLobby(snap) {
     <div class="vb tree"  style="left: 94%; top: 40%;">${renderSprite('tree-pine', 2)}</div>
     <div class="vb tree"  style="left: 17%; top: 52%;">${renderSprite('tree-bush', 2)}</div>
     <div class="vb tree"  style="left: 83%; top: 52%;">${renderSprite('tree-bush', 2)}</div>
-    <div class="vb lantern" style="left: 14%; top: 66%;">${renderSprite('lantern-post', 2)}</div>
-    <div class="vb lantern" style="left: 86%; top: 66%;">${renderSprite('lantern-post', 2)}</div>
+    <div class="vb lantern" style="left: 38%; top: 66%;">${renderSprite('lantern-post', 2)}</div>
+    <div class="vb lantern" style="left: 62%; top: 66%;">${renderSprite('lantern-post', 2)}</div>
     <div class="vb signpost" style="left: 50%; top: 50%;">${renderSprite('signpost', 2)}</div>
 
     <!-- 3) 전경 (top 62~95%) — corner 나무 framing + 두 yard fence cluster(중앙 38~63% 게이트, 0~14%/86~100% flank clear) -->
