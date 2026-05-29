@@ -3291,6 +3291,7 @@ function renderLobby(snap) {
     return `
       <div class="room-card${isActive ? ' active' : ''}" data-key="${escapeHtml(k)}">
         ${lobbyBubble}
+        <div class="chimney-smoke" aria-hidden="true"><i></i><i></i><i></i></div>
         <div class="room-title">
           <span class="door">${renderSprite('door', 2)}</span>
           <span>${escapeHtml(k)}</span>

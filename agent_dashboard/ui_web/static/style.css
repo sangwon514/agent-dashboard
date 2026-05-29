@@ -642,6 +642,36 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1
   50%      { box-shadow: 0 0 0 2px rgba(161,79,31,.55), 0 0 24px rgba(161,79,31,.30), var(--shadow); }
 }
 
+/* busy 집 굴뚝 연기 — active(busy>0) 카드 지붕에서 솔솔. 낮에도 "안에서 일하는 중" 신호.
+   perf: transform/opacity 만(GPU 합성), idle 은 display:none 으로 비용 0. */
+.chimney-smoke {
+  display: none;
+  position: absolute;
+  top: -22px; right: 20px;        /* 연기존을 카드 지붕선 위(음수 top)에 둬 퍼프가 하늘로 오름 */
+  width: 10px; height: 22px;
+  pointer-events: none;
+  z-index: 2;
+}
+.room-card.active .chimney-smoke { display: block; }
+.chimney-smoke i {
+  position: absolute;
+  bottom: 0; left: 50%;            /* bottom:0 = 지붕선(card top) — 여기서 emit */
+  width: 7px; height: 7px;
+  margin-left: -3.5px;
+  border-radius: 50%;
+  background: rgba(150, 142, 132, 0.8);  /* tan sky 위에서 읽히게 진한 회색 */
+  opacity: 0;
+  animation: chimney-puff 3.6s ease-out infinite;
+}
+.chimney-smoke i:nth-child(2) { animation-delay: 1.2s; }
+.chimney-smoke i:nth-child(3) { animation-delay: 2.4s; }
+@keyframes chimney-puff {
+  0%   { transform: translateY(0) scale(0.5); opacity: 0; }
+  25%  { opacity: 0.85; }          /* 지붕 바로 위에서 또렷 — 상승 내내 보이게 */
+  65%  { opacity: 0.55; }
+  100% { transform: translateY(-22px) scale(1.5); opacity: 0; }
+}
+
 .room-title {
   display: flex; align-items: center; gap: 8px;
   font-weight: 600; font-size: 15px;
@@ -2399,6 +2429,7 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
   .pet[data-pet="__egg__"] .sprite-wrap.egg-hatch { animation: none !important; }
   .poke-heart { animation: poke-heart-fade .6s ease-out forwards !important; }
   .human-char.human-cheer .human-wrap { animation: none !important; }
+  .chimney-smoke { display: none !important; }
 }
 
 @media (max-width: 480px) {
