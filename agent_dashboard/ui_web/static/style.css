@@ -965,7 +965,7 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1
 .card-occupant .human-char.attached.working {
   animation: human-work 2.0s ease-in-out infinite;
 }
-.card-occupant .char-label { font-size: 10px; opacity: 0.8; }
+.card-occupant .char-label { display: none; }
 
 /* humanoid 바닥 그림자 — 카드 발치 및 씬 내 둘 다 */
 .card-occupant .human-char.attached::after,
