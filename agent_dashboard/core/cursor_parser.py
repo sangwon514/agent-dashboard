@@ -45,12 +45,14 @@ def parse_cursor_jsonl(
     project_slug: str = "",
     session_id: str = "",
     now: datetime | None = None,
+    fallback_ts: datetime | None = None,
 ) -> ParsedEvents:
     """Cursor transcript JSONL -> one representative AgentEvent per file.
 
     Cursor lines do not carry a top-level timestamp. The session timestamp is
-    embedded in user text as `<timestamp>...</timestamp>`; if absent, `now` is
-    used. Unknown line and content shapes are ignored.
+    embedded in user text as `<timestamp>...</timestamp>`; if absent,
+    `fallback_ts` then `now` is used. Unknown line and content shapes are
+    ignored.
     """
     now = now or datetime.now(timezone.utc)
     first_ts: datetime | None = None
@@ -101,7 +103,7 @@ def parse_cursor_jsonl(
     if not saw_cursor_message:
         return ParsedEvents(parse_failures=parse_failures)
 
-    started_at = first_ts or now
+    started_at = first_ts or fallback_ts or now
     last_activity = last_ts or started_at
     is_subagent = _is_subagent_session(session_id)
     tool_use_id = session_id or "cursor-session"
@@ -135,6 +137,7 @@ def parse_cursor_session(
     project_slug: str = "",
     session_id: str = "",
     now: datetime | None = None,
+    fallback_ts: datetime | None = None,
 ) -> ParsedEvents:
     """Parse a Cursor parent transcript plus subagent transcripts.
 
@@ -147,6 +150,7 @@ def parse_cursor_session(
         project_slug=project_slug,
         session_id=session_id,
         now=now,
+        fallback_ts=fallback_ts,
     )
     for name, lines in subagent_files:
         tool_use_id = name.removesuffix(".jsonl")
@@ -155,6 +159,7 @@ def parse_cursor_session(
             project_slug=project_slug,
             session_id=f"{session_id}/subagents/{tool_use_id}",
             now=now,
+            fallback_ts=fallback_ts,
         )
         events.parse_failures += sub_events.parse_failures
         if not sub_events:

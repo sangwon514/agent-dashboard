@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
 from pathlib import Path
 from threading import Lock
 from typing import Callable
@@ -157,17 +158,23 @@ class JsonlWatcher:
             # Codex: parser 가 session_meta 에서 자동 추출 (인자 비우면 됨).
             return parser(lines)
         project_slug, session_id = _cursor_path_meta(path, root)
+        try:
+            fallback_ts = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
+        except OSError:
+            fallback_ts = None
         if _is_cursor_main_transcript(path, root):
             return parse_cursor_session(
                 lines,
                 _cursor_subagent_files(path),
                 project_slug=project_slug,
                 session_id=session_id,
+                fallback_ts=fallback_ts,
             )
         return parser(
             lines,
             project_slug=project_slug,
             session_id=session_id,
+            fallback_ts=fallback_ts,
         )
 
     def _read_changed_lines(self, path: Path) -> tuple[list[str], int, bool]:

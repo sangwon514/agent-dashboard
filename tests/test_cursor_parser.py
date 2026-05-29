@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -86,6 +87,47 @@ def test_parse_cursor_timestamp_falls_back_to_now():
     )
 
     assert events["sid"].started_at == now
+    assert getattr(events["sid"], "last_activity") == now
+
+
+def test_parse_cursor_timestamp_uses_fallback_before_now():
+    fallback_ts = datetime(2026, 5, 26, 2, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 5, 26, 3, 0, tzinfo=timezone.utc)
+    events = parse_cursor_jsonl(
+        ['{"role":"user","message":{"content":[{"type":"text","text":"No timestamp"}]}}'],
+        project_slug="Users-x-project",
+        session_id="sid",
+        now=now,
+        fallback_ts=fallback_ts,
+    )
+
+    ev = events["sid"]
+    assert ev.started_at == fallback_ts
+    assert getattr(ev, "last_activity") == fallback_ts
+    assert ev.status == "orphaned"
+
+
+def test_parse_cursor_session_threads_fallback_to_subagents():
+    fallback_ts = datetime(2026, 5, 26, 2, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 5, 26, 3, 0, tzinfo=timezone.utc)
+    events = parse_cursor_session(
+        ['{"role":"user","message":{"content":[{"type":"text","text":"Parent"}]}}'],
+        [
+            (
+                "child.jsonl",
+                ['{"role":"user","message":{"content":[{"type":"text","text":"Child"}]}}'],
+            ),
+        ],
+        project_slug="Users-x-project",
+        session_id="sid",
+        now=now,
+        fallback_ts=fallback_ts,
+    )
+
+    assert events["sid"].started_at == fallback_ts
+    assert getattr(events["sid"], "last_activity") == fallback_ts
+    assert events["child"].started_at == fallback_ts
+    assert getattr(events["child"], "last_activity") == fallback_ts
 
 
 def test_cursor_parse_failures_count_broken_jsonl_lines():
@@ -173,3 +215,31 @@ def test_cursor_watcher_merges_subagents_when_parent_reparsed(monkeypatch, tmp_p
     assert path == main_path
     assert tool == "cursor"
     assert set(events) == {"parent-uuid", "child-one", "child-two"}
+
+
+def test_cursor_watcher_passes_file_mtime_as_fallback(monkeypatch, tmp_path):
+    root = tmp_path / ".cursor" / "projects"
+    session_dir = root / "Users-me-proj" / "agent-transcripts" / "parent-uuid"
+    session_dir.mkdir(parents=True)
+    main_path = session_dir / "parent-uuid.jsonl"
+    main_path.write_text(
+        '{"role":"user","message":{"content":[{"type":"text","text":"No timestamp"}]}}\n',
+        encoding="utf-8",
+    )
+    fallback_ts = datetime(2026, 5, 26, 2, 0, tzinfo=timezone.utc)
+    os.utime(main_path, (fallback_ts.timestamp(), fallback_ts.timestamp()))
+    monkeypatch.setattr(
+        watcher_module,
+        "WATCH_ROOTS",
+        [(root, "cursor", parse_cursor_jsonl, "*.jsonl")],
+    )
+    calls = []
+    watcher = JsonlWatcher(lambda path, events, tool: calls.append((path, events, tool)))
+
+    watcher._reparse(main_path)
+
+    assert len(calls) == 1
+    _path, events, tool = calls[0]
+    assert tool == "cursor"
+    assert events["parent-uuid"].started_at == fallback_ts
+    assert getattr(events["parent-uuid"], "last_activity") == fallback_ts
