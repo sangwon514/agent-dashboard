@@ -3371,7 +3371,7 @@ function renderLobby(snap) {
     <!-- 4) 로비 deco — 마을 소품 (fallback: signpost/lantern-post/well) -->
     <div class="lobby-deco lobby-village-sign" style="left:8%; bottom:5%;">${renderSprite('deco_village_sign', 3) || renderSprite('signpost', 3)}</div>
     <div class="lobby-deco lobby-bench" style="right:12%; bottom:8%;">${renderSprite('deco_bench', 3) || renderSprite('lantern-post', 3)}</div>
-    <div class="lobby-deco lobby-fountain" style="left:50%; transform:translateX(-50%); bottom:3%;">${renderSprite('deco_fountain_small', 3) || renderSprite('well', 3)}</div>
+    <div class="lobby-deco lobby-fountain" style="left:50%; transform:translateX(-50%); bottom:7%;">${renderSprite('deco_fountain_small', 3) || renderSprite('well', 3)}</div>
     <!-- 5) 구름 drift — sky zone 에 추가 cloud -->
     <div class="cloud-small-deco vb cloud" style="left:15%; top:8%;">${renderSprite('cloud-small', 2)}</div>
     <div class="cloud-small-deco vb cloud" style="left:60%; top:14%; animation-duration:80s; animation-direction:reverse;">${renderSprite('cloud-small', 1)}</div>
