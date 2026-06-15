@@ -4979,13 +4979,35 @@ function _renderImpl(snap) {
 }
 
 // ── SSE 연결 ────────────────────────────────────────────────────
+// SSE 데이터 렌더 스로틀 — 서브에이전트 폭주 시 SSE 가 0.25~0.6s 마다 와서
+// 매번 풀 innerHTML 재빌드를 하면 렌더러 CPU 가 치솟음(실측). 데이터 렌더를
+// 최소 1.2s 간격으로 합치되, 마지막 상태는 trailing 타이머로 반드시 반영한다.
+// (클릭/hashchange 등 인터랙션 렌더는 즉시성이 필요하므로 그대로 render() 사용.)
+let _lastDataRender = 0;
+let _dataRenderTimer = null;
+const DATA_RENDER_MIN_MS = 1200;
+function renderDataThrottled() {
+  const now = performance.now();
+  const since = now - _lastDataRender;
+  if (since >= DATA_RENDER_MIN_MS) {
+    _lastDataRender = now;
+    if (lastSnap) render(lastSnap);
+  } else if (!_dataRenderTimer) {
+    _dataRenderTimer = setTimeout(() => {
+      _dataRenderTimer = null;
+      _lastDataRender = performance.now();
+      if (lastSnap) render(lastSnap);
+    }, DATA_RENDER_MIN_MS - since);
+  }
+}
+
 function connect() {
   const es = new EventSource('/api/stream');
   es.addEventListener('snapshot', (ev) => {
     conn.classList.remove('bad');
     try {
       lastSnap = JSON.parse(ev.data);
-      render(lastSnap);
+      renderDataThrottled();
     } catch (e) { console.error('parse error', e); }
   });
   es.addEventListener('ping', () => conn.classList.remove('bad'));

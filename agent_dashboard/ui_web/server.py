@@ -92,7 +92,7 @@ def make_app() -> FastAPI:
         # 다발성 transcript 갱신을 합쳐 보내는 디바운스 윈도우 (초).
         # 서브에이전트 폭주 시 update_event 가 초당 수십 번 set 되는데,
         # 그걸 그대로 push 하면 클라이언트가 풀-DOM 재구축을 반복해 버벅임.
-        DEBOUNCE_S = 0.25
+        DEBOUNCE_S = 0.6
         async def gen():
             yield {"event": "snapshot", "data": json.dumps(store.snapshot(live=True))}
             while True:
