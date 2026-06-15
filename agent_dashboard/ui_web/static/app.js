@@ -3357,6 +3357,45 @@ function townSummary(grouped) {
   return { busy, tokens, calls, topType };
 }
 
+// 오늘의 활동 스파크라인 — town 표시 세션들의 이벤트 started_at 을
+// "오늘"(로컬 날짜) 2시간 버킷(12칸)으로 카운트. 한 번 순회, 정적 렌더.
+function townSparkline(grouped) {
+  const BUCKETS = 12;  // 2시간 단위
+  const counts = new Array(BUCKETS).fill(0);
+  const now = new Date();
+  const y = now.getFullYear(), mo = now.getMonth(), d = now.getDate();
+  let total = 0;
+  for (const k of Object.keys(grouped)) {
+    for (const s of grouped[k]) {
+      for (const e of (s.events || [])) {
+        if (!e.started_at) continue;
+        const dt = new Date(e.started_at);
+        if (dt.getFullYear() !== y || dt.getMonth() !== mo || dt.getDate() !== d) continue;
+        counts[Math.floor(dt.getHours() / 2)]++;
+        total++;
+      }
+    }
+  }
+  if (total === 0) return null;  // 오늘 이벤트 없으면 스파크라인 숨김
+  return { counts, max: Math.max(...counts), curBucket: Math.floor(now.getHours() / 2) };
+}
+
+function sparklineHTML(sp) {
+  if (!sp) return '';
+  const MAXH = 16;  // px — .tb-bars 높이와 일치
+  const bars = sp.counts.map((c, i) => {
+    const h = c > 0 ? Math.max(2, Math.round((c / sp.max) * MAXH)) : 1;
+    const cls = 'tb-bar' + (c === 0 ? ' tb-bar-empty' : '') + (i === sp.curBucket ? ' tb-bar-now' : '');
+    const hr = i * 2;
+    return `<span class="${cls}" style="height:${h}px" title="${hr}–${hr + 2}시 · ${c}회"></span>`;
+  }).join('');
+  return `
+      <div class="tb-spark" aria-label="오늘 시간대별 활동">
+        <div class="tb-spark-label">오늘 활동</div>
+        <div class="tb-bars" aria-hidden="true">${bars}</div>
+      </div>`;
+}
+
 function townBoardHTML(grouped) {
   const sum = townSummary(grouped);
   // 아무 활동도 없으면 게시판 자체를 숨김 (빈 0 나열 방지).
@@ -3373,7 +3412,7 @@ function townBoardHTML(grouped) {
         <div class="tb-row"><span class="tb-ico" aria-hidden="true">🍪</span><b>${tokTxt}</b></div>
         <div class="tb-row"><span class="tb-ico" aria-hidden="true">⭐</span><span class="tb-top">${escapeHtml(topShort)}</span></div>
         <div class="tb-row"><span class="tb-ico" aria-hidden="true">🔁</span><b>${sum.calls}</b>회</div>
-      </div>
+      </div>${sparklineHTML(townSparkline(grouped))}
     </div>
     <div class="tb-post" aria-hidden="true"></div>
   </div>`;

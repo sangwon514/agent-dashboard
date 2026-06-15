@@ -2574,6 +2574,41 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
 .tb-row .tb-ico { font-size: 11px; }
 .tb-row b { font-weight: 700; color: #ffe9b0; }
 .tb-top { overflow: hidden; text-overflow: ellipsis; }
+/* 오늘의 활동 스파크라인 — 따뜻한 톤, 정적(트랜지션 없음) */
+.tb-spark {
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 1px dashed rgba(243, 230, 200, .4);
+}
+.tb-spark-label {
+  font-size: 9px;
+  letter-spacing: .04em;
+  color: #e8d2a0;
+  margin-bottom: 3px;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, .4);
+}
+.tb-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 16px;
+}
+.tb-bar {
+  flex: 1 1 0;
+  min-width: 0;
+  background: linear-gradient(180deg, #ffcf7a 0%, #e8993f 100%);
+  border-radius: 1px 1px 0 0;
+  opacity: .85;
+}
+.tb-bar-empty {
+  background: rgba(243, 230, 200, .18);
+  opacity: .6;
+}
+.tb-bar-now {
+  background: linear-gradient(180deg, #fff1c2 0%, #ffb347 100%);
+  opacity: 1;
+  box-shadow: 0 0 3px rgba(255, 200, 120, .8);
+}
 /* 땅에 박힌 말뚝 */
 .tb-post {
   width: 9px;
