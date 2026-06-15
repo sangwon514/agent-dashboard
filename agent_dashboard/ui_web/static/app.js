@@ -4207,6 +4207,85 @@ window.resetAllPetConfig = () => {
   if (lastSnap) render(lastSnap);
 };
 
+// ── 펫 도감 (Agent Codex) — 모든 마을/세션의 subagent_type 집계 ──────
+// 독립 마운트(#codex-root). 닫혀있으면 innerHTML='' → DOM 비용 0.
+// 패널 열릴 때 1회 렌더 + fav 토글 시에만 재렌더 (무한 애니 X).
+let codexOpen = false;
+function codexSpecies(snap) {
+  const tally = new Map(); // subagent_type → 누적 이벤트 수
+  for (const s of (snap?.sessions || [])) {
+    for (const e of (s.events || [])) {
+      const t = e.subagent_type;
+      if (!t) continue;   // subagent_type 없는 메인 세션 활동은 제외
+      tally.set(t, (tally.get(t) || 0) + 1);
+    }
+  }
+  const list = [...tally.entries()].map(([type, totalCalls]) => ({
+    type,
+    displayName: getPetDisplay(type),
+    totalCalls,
+    tier: totalCalls >= 50 ? 'ascended' : (totalCalls >= 20 ? 'evolved' : 'basic'),
+    fav: isPetFav(type),
+  }));
+  // 즐겨찾기 먼저, 그다음 누적 호출 내림차순.
+  list.sort((a, b) => (Number(b.fav) - Number(a.fav)) || (b.totalCalls - a.totalCalls));
+  return list;
+}
+
+const CODEX_TIER_BADGE = {
+  evolved:  '<span class="codex-tier codex-tier-evolved" title="진화 (20회+)">✨ evolved</span>',
+  ascended: '<span class="codex-tier codex-tier-ascended" title="초월 (50회+)">👑 ascended</span>',
+};
+
+function codexHTML(snap) {
+  const species = codexSpecies(snap);
+  const totalSpecies = species.length;
+  const totalCalls = species.reduce((n, sp) => n + sp.totalCalls, 0);
+  // 카드 먼저 빌드 → renderSpriteRef 가 symbol defs 를 채움 → 이후 spriteDefsHTML() 로 주입.
+  const cards = species.map(sp => {
+    const sprite = renderSpriteRef(spriteFor(sp.type, sp.totalCalls), 3);
+    const tierBadge = CODEX_TIER_BADGE[sp.tier] || '';
+    return `
+      <div class="codex-card${sp.fav ? ' fav' : ''}" data-type="${escapeHtml(sp.type)}">
+        <button class="codex-fav" type="button" data-type="${escapeHtml(sp.type)}" title="즐겨찾기" aria-pressed="${sp.fav}">${sp.fav ? '★' : '☆'}</button>
+        <div class="codex-sprite">${sprite}</div>
+        <div class="codex-name" title="${escapeHtml(sp.type)}">${escapeHtml(sp.displayName)}</div>
+        <div class="codex-calls">🔁 ${sp.totalCalls}회</div>
+        ${tierBadge}
+      </div>`;
+  }).join('');
+  const body = totalSpecies === 0
+    ? '<div class="codex-empty muted">아직 만난 에이전트가 없어요.</div>'
+    : `<div class="codex-grid">${cards}</div>`;
+  return spriteDefsHTML() + `
+    <div class="codex-backdrop" onclick="window.closeCodex()"></div>
+    <div class="codex-panel open" role="dialog" aria-modal="true" aria-label="펫 도감">
+      <div class="codex-head">
+        <h2>📖 펫 도감</h2>
+        <span class="codex-summary muted">총 ${totalSpecies}종 · 누적 ${totalCalls}회</span>
+        <button class="detail-close" type="button" onclick="window.closeCodex()" aria-label="닫기">×</button>
+      </div>
+      ${body}
+    </div>`;
+}
+
+function renderCodex() {
+  const el = document.getElementById('codex-root');
+  if (!el) return;
+  if (!codexOpen) { el.innerHTML = ''; return; }   // 닫힘 → DOM 비용 0
+  el.innerHTML = codexHTML(lastSnap);
+  el.querySelectorAll('.codex-fav').forEach(btn => {
+    btn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      togglePetFav(btn.dataset.type);
+      renderCodex();                  // 패널 재렌더 (fav 재정렬/표시)
+      if (lastSnap) render(lastSnap); // 메인 화면 펫 fav 표시에도 반영
+    });
+  });
+}
+window.toggleCodex = () => { codexOpen = !codexOpen; renderCodex(); };
+window.closeCodex = () => { codexOpen = false; renderCodex(); };
+
 // ── 라우팅 + 렌더 ───────────────────────────────────────────────
 // URL 스킴:
 //   `` (빈 hash)                       → claude lobby (default town)
@@ -4871,6 +4950,7 @@ document.addEventListener('keydown', (e) => {
   const inInput = tag === 'input' || tag === 'textarea' || document.activeElement?.isContentEditable;
 
   if (e.key === 'Escape') {
+    if (codexOpen) { window.closeCodex?.(); return; }
     if (openDetail) { openDetail = null; render(lastSnap); return; }
     if (settingsOpen) { window.closeSettings?.(); return; }
     if (lobbySearchQuery) { lobbySearchQuery = ''; render(lastSnap); return; }

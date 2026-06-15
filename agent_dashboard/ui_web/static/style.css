@@ -537,6 +537,83 @@ body[data-town="codex"] .scene .floor {
 }
 .settings-actions button:hover { background: rgba(200,40,34,.08); }
 
+/* ── 펫 도감 (Agent Codex) ─────────────────────────────────── */
+/* 중앙 오버레이 모달 — detail(20)·settings(30) 위. backdrop 40 / panel 41. */
+.codex-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.32);
+  z-index: 40;
+  animation: codex-fade .14s ease;
+}
+@keyframes codex-fade { from { opacity: 0; } to { opacity: 1; } }
+.codex-panel {
+  position: fixed; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(720px, 92vw); max-height: 82vh;
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 18px 48px rgba(0,0,0,.22);
+  padding: 0; overflow: hidden auto;
+  z-index: 41;
+}
+.codex-panel.open { animation: codex-pop .16s ease; }
+@keyframes codex-pop {
+  from { opacity: 0; transform: translate(-50%, -48%) scale(.98); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+.codex-head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 18px; border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; background: var(--panel); z-index: 1;
+}
+.codex-head h2 { margin: 0; font-size: 16px; }
+.codex-head .codex-summary { font-size: 12px; }
+.codex-head .detail-close { margin-left: auto; float: none; }
+
+.codex-empty { padding: 48px 20px; text-align: center; font-size: 13px; }
+
+.codex-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  padding: 18px;
+}
+.codex-card {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding: 14px 8px 12px;
+  background: rgba(120,80,40,.04);
+  border: 1px solid var(--line); border-radius: 10px;
+  text-align: center;
+}
+.codex-card.fav { border-color: var(--accent); background: rgba(217,107,58,.06); }
+.codex-sprite {
+  width: 56px; height: 56px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+  border: 1px solid var(--line); border-radius: 8px;
+}
+.codex-sprite .sprite { display: block; }
+.codex-name {
+  font-size: 12px; font-weight: 600; color: var(--ink);
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.codex-calls { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.codex-tier {
+  font-size: 10px; padding: 1px 7px; border-radius: 999px;
+  border: 1px solid var(--line); letter-spacing: .02em;
+}
+.codex-tier-evolved  { color: var(--accent); border-color: rgba(217,107,58,.4); }
+.codex-tier-ascended { color: #b8860b; border-color: rgba(184,134,11,.45); background: rgba(184,134,11,.08); }
+.codex-fav {
+  position: absolute; top: 6px; right: 6px;
+  border: none; background: none; cursor: pointer;
+  font-size: 15px; line-height: 1; color: var(--muted);
+  padding: 2px; opacity: .65; transition: opacity .12s, color .12s;
+}
+.codex-fav:hover { opacity: 1; color: var(--accent); }
+.codex-card.fav .codex-fav { color: var(--accent); opacity: 1; }
+
 main { padding: 28px 32px 80px; max-width: 1200px; margin: 0 auto; }
 
 footer {

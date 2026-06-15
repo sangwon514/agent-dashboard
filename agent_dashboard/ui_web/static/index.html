@@ -12,6 +12,7 @@
     <div class="summary" id="summary">마을 문을 여는 중…</div>
     <div class="header-right">
       <span id="usage-bar" class="usage-bar" aria-label="Claude 토큰 사용량" hidden></span>
+      <button class="settings-btn" id="codex-toggle" onclick="window.toggleCodex()" title="펫 도감 — 만난 에이전트 모아보기">📖</button>
       <button class="settings-btn" id="theme-toggle" onclick="window.toggleTheme()" title="테마 전환 (라이트/다크)">☀</button>
       <button class="settings-btn" onclick="window.openSettings()" title="펫 외형 설정"><span class="icon-mount" data-icon="cog" data-icon-scale="1"></span></button>
     </div>
@@ -20,6 +21,7 @@
   <nav id="town-signpost" aria-label="마을 전환"></nav>
   <main id="root"></main>
   <aside id="settings-root"></aside>
+  <aside id="codex-root"></aside>
   <div id="gazette" class="gazette" aria-live="polite" style="display:none"></div>
   <footer>
     <span id="conn">●</span>
