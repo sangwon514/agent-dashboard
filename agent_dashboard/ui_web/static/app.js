@@ -27,6 +27,18 @@ window.toggleTheme = function () {
 };
 applyTheme(loadTheme());
 
+// ── 차분 모드 (연속 앰비언트/마스코트/마퀴 애니 정지 → 저-CPU) (localStorage) ──
+// cpu-idle(탭 숨김 시 자동 정지)와 독립. 켜면 보고 있어도 무한 애니가 멈춘다.
+const CALM_KEY = 'agentville.calm.v1';
+function loadCalm() { try { return localStorage.getItem(CALM_KEY) === '1'; } catch { return false; } }
+function applyCalm(on) { document.body.classList.toggle('calm', !!on); }
+function setCalm(on) {
+  try { localStorage.setItem(CALM_KEY, on ? '1' : '0'); } catch {}
+  applyCalm(on);
+}
+window.toggleCalm = () => setCalm(!loadCalm());
+applyCalm(loadCalm());
+
 // ── 펫 커스터마이즈 (localStorage) ──────────────────────────────
 const PET_CONFIG_KEY = 'agentville.pet-config.v1';
 let petConfig = (() => {
@@ -4195,6 +4207,10 @@ function settingsHTML(snap) {
         <button class="detail-close" onclick="window.closeSettings()">×</button>
       </div>
       <p class="muted settings-help">발견된 서브에이전트마다 스프라이트/색상/이름을 직접 정할 수 있어요. 저장은 자동.</p>
+      <label class="calm-toggle">
+        <input type="checkbox" id="calm-checkbox"${loadCalm() ? ' checked' : ''}>
+        <span>🌙 차분 모드 <span class="muted">— 연속 애니메이션을 꺼 CPU를 아낍니다</span></span>
+      </label>
       ${types.length === 0 ? '<div class="muted" style="padding:30px;text-align:center">아직 발견된 펫이 없어요. Agent 도구를 한 번이라도 호출하면 여기 나타납니다.</div>' : rows}
       ${types.length > 0 ? '<div class="settings-actions"><button onclick="window.resetAllPetConfig()">전체 초기화</button></div>' : ''}
     </div>`;
@@ -4206,6 +4222,8 @@ function renderSettings() {
   if (!settingsOpen) { el.innerHTML = ''; return; }
   el.innerHTML = settingsHTML(lastSnap);
   mountIcons(el);
+  const calmBox = el.querySelector('#calm-checkbox');
+  if (calmBox) calmBox.addEventListener('change', (ev) => setCalm(ev.target.checked));
   // 입력 핸들러
   el.querySelectorAll('.settings-row').forEach(row => {
     const t = row.dataset.type;
@@ -5219,6 +5237,7 @@ setInterval(applyTimeOfDay, 10 * 60 * 1000);
   function tick(ts) {
     requestAnimationFrame(tick);
     if (motionQ.matches) return;
+    if (document.body.classList.contains('calm')) return;  // 차분 모드 — 마스코트 정지
     if (document.hidden) return;        // 숨은 탭에선 일 안 함 (CPU 절약)
     if (currentRoom()) return;
     // 30fps 스로틀 — 느리게 배회하는 고양이는 60fps 불필요. 매 프레임 querySelector/

@@ -485,6 +485,18 @@ body[data-town="codex"] .scene .floor {
 .settings-head h2 { margin: 0; font-size: 16px; }
 .settings-help { padding: 12px 18px 0; font-size: 12px; }
 
+.calm-toggle {
+  display: flex; align-items: center; gap: 9px;
+  margin: 12px 18px 0;
+  padding: 10px 12px;
+  font-size: 13px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.calm-toggle input { cursor: pointer; }
+.calm-toggle .muted { font-size: 11px; }
+
 .settings-row {
   display: flex; gap: 14px;
   padding: 14px 18px;
@@ -3898,3 +3910,12 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
 body.cpu-idle *,
 body.cpu-idle *::before,
 body.cpu-idle *::after { animation-play-state: paused !important; }
+
+/* ── 차분 모드 — 연속 애니메이션 정지(저-CPU). app.js 가 body.calm 토글(localStorage 영속).
+   cpu-idle 와 독립: 탭을 보고 있어도 무한 애니가 멈춘다. 마퀴는 멈추되 텍스트는 그대로 보임. */
+body.calm *,
+body.calm *::before,
+body.calm *::after { animation-play-state: paused !important; }
+/* 순수 장식(나비·반딧불, 어슬렁 마스코트)은 정지보다 숨김이 더 확실히 CPU 를 아낌. */
+body.calm .ambient-life-layer,
+body.calm .town-mascot-layer { display: none !important; }
