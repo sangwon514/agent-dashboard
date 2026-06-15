@@ -2537,6 +2537,96 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
   87.5% { left: 5%;   transform: translateY(var(--bob-amp, 8px)); }
   100%  { left: -10%; transform: translateY(0); }
 }
+/* ── Ambient life — 낮 나비 / 저녁·밤 반딧불 (순수 CSS keyframe drift) ── */
+/* sky/bg 평면(z-index 0): 카드 글씨를 가리지 않게 하늘·배경 plane 에서만 떠다님. */
+.ambient-life-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;   /* 화면 밖 drift 가 스크롤/레이아웃에 영향 주지 않게 */
+}
+
+/* 나비 — 작은 파스텔 픽셀, 곡선 drift(화면 밖→안 루프) */
+.butterfly {
+  position: absolute;
+  top: var(--bf-top, 20%);
+  left: 0;
+  width: 12px;
+  height: 10px;
+  opacity: .8;
+  will-change: transform;
+  animation: butterfly-drift var(--bf-dur, 28s) linear infinite;
+}
+.butterfly--rtl { animation-name: butterfly-drift-rtl; }
+.butterfly::before {   /* 몸통 */
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 1px;
+  width: 2px;
+  height: 8px;
+  transform: translateX(-50%);
+  background: #5a4a3a;
+  border-radius: 2px;
+}
+.butterfly .bf-wing {
+  position: absolute;
+  top: 0;
+  width: 6px;
+  height: 10px;
+  border-radius: 60% 60% 50% 50%;
+  will-change: transform;
+}
+.butterfly .bf-wing--l { left: 0;  transform-origin: right center; animation: bf-flap .26s ease-in-out infinite; }
+.butterfly .bf-wing--r { right: 0; transform-origin: left center;  animation: bf-flap .26s ease-in-out infinite; }
+/* 파스텔 3색 */
+.butterfly--a .bf-wing { background: #f7b8d2; }   /* 분홍 */
+.butterfly--b .bf-wing { background: #b8d8f7; }   /* 하늘 */
+.butterfly--c .bf-wing { background: #f7e7a8; }   /* 노랑 */
+@keyframes bf-flap {
+  0%, 100% { transform: scaleX(1); }
+  50%      { transform: scaleX(.22); }
+}
+@keyframes butterfly-drift {
+  0%   { transform: translate(-12vw, 0); }
+  25%  { transform: translate(22vw, -28px); }
+  50%  { transform: translate(50vw, 6px); }
+  75%  { transform: translate(78vw, -22px); }
+  100% { transform: translate(112vw, 0); }
+}
+@keyframes butterfly-drift-rtl {
+  0%   { transform: translate(112vw, 0); }
+  25%  { transform: translate(78vw, -28px); }
+  50%  { transform: translate(50vw, 6px); }
+  75%  { transform: translate(22vw, -22px); }
+  100% { transform: translate(-12vw, 0); }
+}
+
+/* 반딧불 — 노랑 점 + soft glow, 잔잔한 drift(alternate=무한 왕복, 끊김 없음) + blink */
+.firefly {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #ffe28a;
+  box-shadow: 0 0 6px 2px rgba(255, 214, 90, .65);
+  opacity: 0;
+  will-change: transform, opacity;
+  animation:
+    firefly-drift var(--ff-drift, 15s) ease-in-out infinite alternate,
+    firefly-blink var(--ff-blink, 4s) ease-in-out infinite;
+  animation-delay: var(--ff-delay, 0s);
+}
+@keyframes firefly-drift {
+  from { transform: translate(0, 0); }
+  to   { transform: translate(var(--ff-dx, 5px), var(--ff-dy, -6px)); }
+}
+@keyframes firefly-blink {
+  0%, 100% { opacity: .1; }
+  50%      { opacity: .8; }
+}
+
 /* ── Town mascot — 로비 바닥을 어슬렁거리는 동네 고양이 ── */
 .town-mascot-layer {
   position: absolute;
@@ -2601,6 +2691,7 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
 .town-mascot .sprite-wrap.poked { animation: poke-bounce .5s ease-out !important; }
 
 @media (prefers-reduced-motion: reduce) {
+  .ambient-life-layer { display: none !important; }
   .bird-flyby { animation: none !important; }
   .town-mascot .sprite-wrap,
   .town-mascot .mascot-flip,

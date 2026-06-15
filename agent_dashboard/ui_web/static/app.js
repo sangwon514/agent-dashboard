@@ -4554,6 +4554,80 @@ function mascotLayerEl() {
   return document.getElementById('town-mascot-layer') || _mascotLayer;
 }
 
+// ── Ambient life (lobby) — 낮 나비 / 저녁·밤 반딧불, CSS-only drift ──
+// 북극성("살아있는 마을")용 미세 생명. 위치 갱신은 전부 CSS keyframe —
+// JS rAF/타이머로 좌표를 만지지 않는다. getTimeOfDay() 로 낮/밤 분기.
+// 노드 보존은 bird-flyby preserve/restore 패턴과 동일(매 render 보존, 안 끊김).
+let _ambientLifeLayer = null;
+let _ambientLifeTod = null;
+
+function buildAmbientLifeLayer() {
+  const tod = getTimeOfDay();
+  const night = (tod === 'evening' || tod === 'night');
+  const layer = document.createElement('div');
+  layer.id = 'ambient-life-layer';
+  layer.className = 'ambient-life-layer ' + (night ? 'ambient-life--night' : 'ambient-life--day');
+  layer.setAttribute('aria-hidden', 'true');
+
+  if (night) {
+    // 반딧불 ≤5 — 따뜻한 노랑 점 + soft glow, 잔잔한 drift + opacity blink.
+    const FIREFLIES = [
+      { left: 22, top: 58, dx: 6,  dy: -8, drift: 13, blink: 3.2, delay: 0   },
+      { left: 44, top: 70, dx: -7, dy: -6, drift: 16, blink: 4.1, delay: 1.4 },
+      { left: 63, top: 52, dx: 5,  dy: 7,  drift: 15, blink: 3.6, delay: 2.7 },
+      { left: 78, top: 66, dx: -6, dy: -7, drift: 18, blink: 4.6, delay: 0.8 },
+      { left: 34, top: 48, dx: 7,  dy: 6,  drift: 14, blink: 3.9, delay: 3.3 },
+    ];
+    FIREFLIES.forEach(f => {
+      const el = document.createElement('div');
+      el.className = 'firefly';
+      el.style.cssText =
+        `left:${f.left}%;top:${f.top}%;` +
+        `--ff-dx:${f.dx}px;--ff-dy:${f.dy}px;` +
+        `--ff-drift:${f.drift}s;--ff-blink:${f.blink}s;--ff-delay:${f.delay}s;`;
+      layer.appendChild(el);
+    });
+  } else {
+    // 나비 ≤3 — 파스텔 픽셀, 화면 밖→안 곡선 drift + 날개 scaleX 펄럭.
+    const BUTTERFLIES = [
+      { top: 16, dur: 27, delay: 0,   hue: 'a', rtl: false },
+      { top: 30, dur: 33, delay: -11, hue: 'b', rtl: true  },
+      { top: 23, dur: 30, delay: -20, hue: 'c', rtl: false },
+    ];
+    BUTTERFLIES.forEach(b => {
+      const el = document.createElement('div');
+      el.className = 'butterfly butterfly--' + b.hue + (b.rtl ? ' butterfly--rtl' : '');
+      el.style.cssText = `--bf-top:${b.top}%;--bf-dur:${b.dur}s;animation-delay:${b.delay}s;`;
+      el.innerHTML = '<div class="bf-wing bf-wing--l"></div><div class="bf-wing bf-wing--r"></div>';
+      layer.appendChild(el);
+    });
+  }
+  _ambientLifeTod = tod;
+  return layer;
+}
+
+function preserveAmbientLifeLayer() {
+  const el = document.getElementById('ambient-life-layer');
+  if (el) {
+    _ambientLifeLayer = el;
+    el.remove();
+  }
+}
+
+function restoreAmbientLifeLayer() {
+  if (currentRoom()) return;
+  if (new URLSearchParams(window.location.search).get('preview')) return;
+  const lobbyWrap = root.querySelector('.lobby-wrap');
+  if (!lobbyWrap) return;
+  // 시간대가 바뀌면(낮↔밤) 레이어를 새 종류로 교체.
+  if (!_ambientLifeLayer || _ambientLifeTod !== getTimeOfDay()) {
+    _ambientLifeLayer = buildAmbientLifeLayer();
+  }
+  const vbg = lobbyWrap.querySelector('.village-bg');
+  if (vbg) vbg.after(_ambientLifeLayer);
+  else lobbyWrap.appendChild(_ambientLifeLayer);
+}
+
 function render(snap) {
   if (snap) _pendingSnap = snap;
   if (_rafScheduled) return;
@@ -4598,10 +4672,12 @@ function _renderImpl(snap) {
   const room = currentRoom();
   preserveBirdFlybyLayer();
   preserveMascotLayer();
+  preserveAmbientLifeLayer();
   const view = room ? renderRoom(snap, room) : renderLobby(snap);
   root.innerHTML = view + detailHTML(snap);
   restoreBirdFlybyLayer();
   restoreMascotLayer();
+  restoreAmbientLifeLayer();
   mountIcons();
 
   // 오늘의 마을 소식 배너 (씬 밖 fixed 요소 — root 재렌더와 독립)
