@@ -3577,7 +3577,10 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
   bottom: 38px;
   transform: translateX(-50%);
   z-index: 15;
-  max-width: min(92vw, 460px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(94vw, 720px);
   padding: 6px 14px 7px;
   background: rgba(250, 243, 224, .92);
   border: 2px dashed #c9a36a;
@@ -3585,8 +3588,8 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
   box-shadow: 0 3px 10px rgba(90, 60, 20, .18);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   color: #5a4326;
-  pointer-events: none;
-  text-align: center;
+  pointer-events: auto;        /* hover 시 마퀴 일시정지 */
+  overflow: hidden;
   backdrop-filter: blur(1px);
 }
 :root[data-theme="dark"] .gazette {
@@ -3595,25 +3598,40 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
   color: #f0e3c6;
 }
 .gazette-label {
+  flex-shrink: 0;
   font-size: 10px;
   letter-spacing: .04em;
   opacity: .72;
-  margin-bottom: 2px;
+  white-space: nowrap;
 }
-.gazette-line {
-  display: flex;
+/* 흐르는 소식 트랙 — 라벨 오른쪽 영역에서 좌로 무한 스크롤. 양 끝은 마스크로 페이드. */
+.gazette-viewport {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 20px, #000 calc(100% - 20px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 20px, #000 calc(100% - 20px), transparent 100%);
+}
+.gazette-track {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
+  white-space: nowrap;
+  will-change: transform;
+  animation: gazette-marquee linear infinite;
+}
+.gazette:hover .gazette-track { animation-play-state: paused; }
+@keyframes gazette-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.gazette-item {
+  display: inline-flex;
+  align-items: center;
   gap: 7px;
   font-size: 12px;
   line-height: 1.3;
-  transition: opacity .22s ease, transform .22s ease;
-  will-change: opacity, transform;
 }
-.gazette-line.gazette-fading {
-  opacity: 0;
-  transform: translateY(4px);
-}
+.gazette-sep { margin: 0 12px; opacity: .45; font-size: 12px; }
 .gazette-face {
   display: inline-flex;
   flex-shrink: 0;
@@ -3623,10 +3641,7 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
   justify-content: center;
 }
 .gazette-face svg { width: 16px; height: 16px; }
-.gazette-text {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+.gazette-text { white-space: nowrap; }
 .gazette-text b { color: #9a5b2a; font-weight: 600; }
 :root[data-theme="dark"] .gazette-text b { color: #e8a86a; }
+@media (prefers-reduced-motion: reduce) { .gazette-track { animation: none; } }

@@ -3566,14 +3566,13 @@ const GAZETTE_STATUS_KO = {
   failed:  '실패했어요',
   stale:   '멈춘 듯',
 };
-let _gazetteIdx = 0;
 let _gazetteHeadlines = [];
+let _gazetteSig = '';
 
 function buildGazetteHeadlines(snap) {
   if (!snap || !snap.sessions) return [];
   const rows = [];
   for (const s of snap.sessions) {
-    // 긴 슬러그는 pill 너비를 잠식 → shortAlias 로 줄여 상태·시간 보존
     const house = shortAlias(s.project_display || s.project_slug || '?');
     for (const e of (s.events || [])) {
       // 펫(서브에이전트) 소식만 — 메인 세션 자체 활동(type 없음)은 제외
@@ -3591,19 +3590,18 @@ function buildGazetteHeadlines(snap) {
     }
   }
   rows.sort((a, b) => b.t - a.t);
-  return rows.slice(0, 8);
+  return rows.slice(0, 10);
 }
 
-function fillGazetteLine(line) {
-  if (!line || !_gazetteHeadlines.length) return;
-  const h = _gazetteHeadlines[_gazetteIdx % _gazetteHeadlines.length];
+function gazetteItemHTML(h) {
   const statusKo = GAZETTE_STATUS_KO[h.status] || h.status;
   const icon = renderSprite(spriteFor(h.type), 2);
   const tail = h.when ? ` · ${escapeHtml(h.when)}` : '';
-  line.innerHTML =
+  return `<span class="gazette-item">` +
     `<span class="gazette-face">${icon}</span>` +
     `<span class="gazette-text">📣 ${escapeHtml(h.who)} 가 ` +
-    `<b>${escapeHtml(h.house)}</b> 에서 ${escapeHtml(statusKo)}${tail}</span>`;
+    `<b>${escapeHtml(h.house)}</b> 에서 ${escapeHtml(statusKo)}${tail}</span>` +
+  `</span>`;
 }
 
 function renderGazette(snap) {
@@ -3613,34 +3611,26 @@ function renderGazette(snap) {
   if (!_gazetteHeadlines.length) {
     el.style.display = 'none';
     el.innerHTML = '';
+    _gazetteSig = '';
     return;
   }
   el.style.display = '';
-  if (!el.querySelector('.gazette-line')) {
-    el.innerHTML =
-      `<div class="gazette-label">오늘의 마을 소식 📰</div>` +
-      `<div class="gazette-line"></div>`;
-  }
-  if (_gazetteIdx >= _gazetteHeadlines.length) _gazetteIdx = 0;
-  fillGazetteLine(el.querySelector('.gazette-line'));
-}
-
-function rotateGazette() {
-  if (_gazetteHeadlines.length <= 1) return;
-  const el = document.getElementById('gazette');
-  if (!el || el.style.display === 'none') return;
-  const line = el.querySelector('.gazette-line');
-  if (!line) return;
-  line.classList.add('gazette-fading');     // fade-out (opacity/transform 만)
-  setTimeout(() => {
-    _gazetteIdx = (_gazetteIdx + 1) % _gazetteHeadlines.length;
-    fillGazetteLine(line);
-    void line.offsetWidth;                   // reflow → fade-in 트리거
-    line.classList.remove('gazette-fading');
-  }, 240);
-}
-if (!window._gazetteRotator) {
-  window._gazetteRotator = setInterval(rotateGazette, 3500);
+  // 내용이 같으면 트랙을 재생성하지 않음 — 매 snapshot(3s)마다 다시 만들면
+  // 흐르던 마퀴가 처음으로 튀어 끊겨 보임. 새 소식이 들어와 sig 가 바뀔 때만 재구성.
+  const sig = _gazetteHeadlines.map(h => h.type + h.house + h.status + h.when).join('|');
+  if (sig === _gazetteSig && el.querySelector('.gazette-track')) return;
+  _gazetteSig = sig;
+  const sep = '<span class="gazette-sep">·</span>';
+  // 각 블록은 항목들 + 끝 구분자로 끝남 → block+block 의 폭이 정확히 2배라
+  // CSS translateX(-50%) 가 딱 1블록만큼 이동해 끊김 없이 루프된다.
+  const block = _gazetteHeadlines.map(gazetteItemHTML).join(sep) + sep;
+  const track = block + block;
+  el.innerHTML =
+    `<div class="gazette-label">오늘의 마을 소식 📰</div>` +
+    `<div class="gazette-viewport"><div class="gazette-track">${track}</div></div>`;
+  // 항목이 많을수록 천천히 흘러 읽을 시간을 줌(항목당 ~4.5s, 최소 16s).
+  const trackEl = el.querySelector('.gazette-track');
+  if (trackEl) trackEl.style.animationDuration = Math.max(16, _gazetteHeadlines.length * 4.5) + 's';
 }
 
 // ── 방 안 렌더 ───────────────────────────────────────────────────
