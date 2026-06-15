@@ -191,6 +191,8 @@ class Store:
             "status": status,
             "is_error": e.is_error,
             "duration_sec": e.duration_sec,
+            "tokens": e.tokens,
+            "tool_use_count": e.tool_use_count,
         }
 
     @staticmethod

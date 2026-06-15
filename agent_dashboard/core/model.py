@@ -26,6 +26,8 @@ class AgentEvent:
     status: Status = "running"
     is_error: bool = False
     tool: Tool = "claude"
+    tokens: Optional[int] = None
+    tool_use_count: Optional[int] = None
 
     @property
     def duration_sec(self) -> Optional[float]:

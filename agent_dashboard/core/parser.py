@@ -112,9 +112,13 @@ def parse_jsonl(
                 tu_id = str(c.get("tool_use_id", ""))
                 if not tu_id:
                     continue
+                tur = d.get("toolUseResult")
+                tur = tur if isinstance(tur, dict) else {}
                 results[tu_id] = {
                     "is_error": bool(c.get("is_error", False)),
                     "ts": ts,
+                    "tokens": tur.get("totalTokens"),
+                    "tool_use_count": tur.get("totalToolUseCount"),
                 }
 
     for tu_id, ev in events.items():
@@ -125,6 +129,10 @@ def parse_jsonl(
             ev.finished_at = r["ts"]
             ev.is_error = r["is_error"]
             ev.status = "failed" if r["is_error"] else "done"
+            if isinstance(r.get("tokens"), int):
+                ev.tokens = r["tokens"]
+            if isinstance(r.get("tool_use_count"), int):
+                ev.tool_use_count = r["tool_use_count"]
         else:
             ev.status = idle_status(ev.started_at, now, last_activity=last_activity)
 

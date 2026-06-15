@@ -111,6 +111,7 @@ def parse_codex_jsonl(
     meta_cwd = ""
     meta_session = ""
     meta_originator = ""
+    max_total_tokens: int | None = None
 
     for raw in lines:
         raw = raw.strip()
@@ -132,6 +133,19 @@ def parse_codex_jsonl(
             meta_cwd = str(payload.get("cwd", "") or "")
             meta_session = str(payload.get("id", "") or "")
             meta_originator = str(payload.get("originator", "") or "")
+            continue
+
+        if outer_type == "event_msg":
+            if payload.get("type") == "token_count":
+                info = payload.get("info")
+                usage = info.get("total_token_usage") if isinstance(info, dict) else None
+                total_tokens = usage.get("total_tokens") if isinstance(usage, dict) else None
+                if isinstance(total_tokens, int):
+                    max_total_tokens = (
+                        total_tokens
+                        if max_total_tokens is None
+                        else max(max_total_tokens, total_tokens)
+                    )
             continue
 
         if outer_type != "response_item":
@@ -191,6 +205,10 @@ def parse_codex_jsonl(
         else:
             age = (now - ev.started_at).total_seconds()
             ev.status = "stale" if age > _STALE_AFTER_SEC else "running"
+
+    if max_total_tokens is not None and events:
+        latest = max(events.values(), key=lambda event: event.started_at)
+        latest.tokens = max_total_tokens
 
     events.parse_failures = parse_failures
     return events

@@ -164,6 +164,8 @@ def test_store_snapshot_events_include_age_sec():
     assert isinstance(event["age_sec"], float)
     assert event["age_sec"] >= 0.0
     assert event["age_sec"] == pytest.approx(180.0)
+    assert "tokens" in event
+    assert "tool_use_count" in event
 
 
 def test_store_snapshot_event_age_sec_clamps_future_timestamp():

@@ -59,6 +59,27 @@ class ParseJsonlTests(unittest.TestCase):
         ev = self.events["tu-004"]
         self.assertEqual(ev.status, "running")
         self.assertIsNone(ev.finished_at)
+        self.assertIsNone(ev.tokens)
+
+    def test_tool_result_tokens_extracted_from_top_level_tool_use_result(self):
+        lines = [
+            '{"timestamp":"2026-05-08T01:00:00Z","message":{"content":[{"type":"tool_use","name":"Agent","id":"tu-token","input":{"subagent_type":"explorer","description":"Count tokens","prompt":"Inspect tokens"}}]}}',
+            '{"timestamp":"2026-05-08T01:00:05Z","toolUseResult":{"totalTokens":74151,"totalToolUseCount":3},"message":{"content":[{"type":"tool_result","tool_use_id":"tu-token","is_error":false}]}}',
+        ]
+        evs = parse_jsonl(lines, project_slug="t", project_cwd="/", session_id="s")
+        ev = evs["tu-token"]
+        self.assertEqual(ev.tokens, 74151)
+        self.assertEqual(ev.tool_use_count, 3)
+
+    def test_tool_result_without_token_metadata_leaves_tokens_none(self):
+        lines = [
+            '{"timestamp":"2026-05-08T01:00:00Z","message":{"content":[{"type":"tool_use","name":"Agent","id":"tu-no-token","input":{"subagent_type":"explorer","description":"No token metadata","prompt":"Inspect tokens"}}]}}',
+            '{"timestamp":"2026-05-08T01:00:05Z","message":{"content":[{"type":"tool_result","tool_use_id":"tu-no-token","is_error":false}]}}',
+        ]
+        evs = parse_jsonl(lines, project_slug="t", project_cwd="/", session_id="s")
+        ev = evs["tu-no-token"]
+        self.assertIsNone(ev.tokens)
+        self.assertIsNone(ev.tool_use_count)
 
     def test_garbage_lines_ignored(self):
         # garbage line + non-list content line 이 있어도 위 3개는 정상 추출

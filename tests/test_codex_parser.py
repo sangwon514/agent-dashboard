@@ -107,3 +107,21 @@ def test_explicit_overrides_win():
     sample = next(iter(events.values()))
     assert sample.project_slug == "override-slug"
     assert sample.session_id == "override-sid"
+
+
+def test_token_count_total_tokens_sets_latest_representative_event():
+    lines = [
+        '{"timestamp":"2026-05-13T01:57:24.927Z","type":"session_meta","payload":{"id":"sid","cwd":"/tmp/project","originator":"codex_exec"}}',
+        '{"timestamp":"2026-05-13T01:57:33.822Z","type":"response_item","payload":{"type":"function_call","name":"exec_command","arguments":"{\\"cmd\\":\\"ls\\"}","call_id":"call_first"}}',
+        '{"timestamp":"2026-05-13T01:57:34.033Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call_first","output":"Process exited with code 0"}}',
+        '{"timestamp":"2026-05-13T01:57:40.000Z","type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"total_tokens":100}}}}',
+        '{"timestamp":"2026-05-13T01:58:00.100Z","type":"response_item","payload":{"type":"function_call","name":"exec_command","arguments":"{\\"cmd\\":\\"pwd\\"}","call_id":"call_last"}}',
+        '{"timestamp":"2026-05-13T01:58:01.000Z","type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"total_tokens":150}}}}',
+    ]
+    events = parse_codex_jsonl(
+        lines,
+        now=datetime(2026, 5, 13, 1, 58, 30, tzinfo=timezone.utc),
+    )
+
+    assert events["call_first"].tokens is None
+    assert events["call_last"].tokens == 150
