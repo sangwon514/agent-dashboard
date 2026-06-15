@@ -3218,6 +3218,25 @@ function projectStats(sessions) {
   return { sessions: sessions.length, busy, hurt, stuck, sleeping, totalPets, last_activity: lastAct };
 }
 
+// 집 위 "기분 날씨" — 프로젝트의 펫 집계로 우선순위 상태 1개 결정.
+// 우선순위: 실패/응답없음(걱정) > 일하는 중(열일) > 방금 끝(done) > 평화(자는 중).
+function houseMood(sessions) {
+  let busy = 0, problem = 0, done = 0, total = 0;
+  for (const s of sessions) {
+    for (const p of (s.pets || [])) {
+      total++;
+      if (p.state === 'busy') busy++;
+      else if (p.state === 'hurt' || p.state === 'stuck') problem++;
+      else if (p.state === 'done') done++;
+    }
+  }
+  if (total === 0) return null;
+  if (problem > 0) return { state: 'rain', icon: '🌧️', label: `${problem}곳 걱정`, count: problem };
+  if (busy > 0) return { state: 'spark', icon: '⚡', label: `${busy}곳 열일`, count: busy };
+  if (done > 0) return { state: 'done', icon: '✨', label: '방금 끝!', count: done };
+  return { state: 'peace', icon: '💤', label: '평화로움', count: 0 };
+}
+
 // ── 로비 렌더 ────────────────────────────────────────────────────
 function renderLobby(snap) {
   const grouped = groupByProject(snap);
@@ -3288,8 +3307,17 @@ function renderLobby(snap) {
       ? `<div class="card-occupant">${humanCharacterHTML(repSession, { attached: true, noBubble: true })}</div>`
       : '';
 
+    const mood = houseMood(sessions);
+    const moodNode = mood
+      ? `<div class="house-mood mood-${mood.state}" aria-label="${escapeHtml(mood.label)}" title="${escapeHtml(mood.label)}">`
+        + `<span class="mood-icon" aria-hidden="true">${mood.icon}</span>`
+        + (mood.count > 1 ? `<span class="mood-count">${mood.count}</span>` : '')
+        + `</div>`
+      : '';
+
     return `
       <div class="room-card${isActive ? ' active' : ''}" data-key="${escapeHtml(k)}">
+        ${moodNode}
         ${lobbyBubble}
         <div class="chimney-smoke" aria-hidden="true"><i></i><i></i><i></i></div>
         <div class="room-title">

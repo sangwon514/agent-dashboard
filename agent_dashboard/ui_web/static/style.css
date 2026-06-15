@@ -672,6 +672,41 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1
   100% { transform: translateY(-22px) scale(1.5); opacity: 0; }
 }
 
+/* 집 위 "기분 날씨" — 카드 상단 좌측 모서리에 살짝 떠 있는 상태 구름.
+   멀리서도 "이 집 지금 어떤 분위기?"를 즉시 읽게 함. perf: transform/opacity 만(GPU). */
+.house-mood {
+  position: absolute;
+  top: -13px; left: -6px;          /* chimney(우상단)·중앙 말풍선과 겹치지 않게 좌상단 */
+  z-index: 3;
+  display: flex; align-items: center; gap: 3px;
+  padding: 3px 8px;
+  border-radius: 11px;
+  font-size: 13px; line-height: 1;
+  pointer-events: none;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.18);
+  animation: house-mood-bob 3.2s ease-in-out infinite;
+  will-change: transform;
+}
+.house-mood .mood-icon { font-size: 14px; }
+.house-mood .mood-count {
+  font-size: 10px; font-weight: 700;
+  color: rgba(60, 45, 30, 0.85);
+}
+/* 상태별 따뜻한 파스텔 */
+.mood-rain  { background: #cdd9ec; }                       /* 차분한 블루 — 걱정 */
+.mood-spark { background: #ffe7a8; animation-duration: 2.0s; } /* 따뜻한 옐로 — 열일(더 빠른 bob) */
+.mood-done  { background: #ffd6e8; }                       /* 핑크 — 방금 끝! */
+.mood-peace { background: #dcecdc; opacity: 0.85; }        /* 옅은 그린 — 평화 */
+
+@keyframes house-mood-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .house-mood { animation: none; }
+}
+
 .room-title {
   display: flex; align-items: center; gap: 8px;
   font-weight: 600; font-size: 15px;
