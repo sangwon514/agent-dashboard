@@ -2767,10 +2767,15 @@ function gridToRects(grid, scale, frameClass) {
   const cellH = (BASE * scale) / Math.max(rows, BASE);
   let rects = '';
   for (let y = 0; y < rows; y++) {
+    const y0 = Math.round(y * cellH), y1 = Math.round((y + 1) * cellH);
     for (let x = 0; x < cols; x++) {
       const c = grid[y][x];
       if (c === '.' || c === ' ') continue;
-      rects += `<rect class="px-${c} ${frameClass}" x="${x*cellW}" y="${y*cellH}" width="${cellW}" height="${cellH}"/>`;
+      // 정수 픽셀 경계로 스냅 — 비정수 cellW(예: 32-wide 스프라이트 @scale3 = 1.5px)일 때
+      // crispEdges 가 컬럼마다 1/2px 불균등 반올림 → 세로 줄무늬 seam 이 생기던 버그.
+      // 인접 rect 가 같은 정수 경계를 공유하게 만들어 seam 을 제거한다(폭은 1/2px 교차).
+      const x0 = Math.round(x * cellW), x1 = Math.round((x + 1) * cellW);
+      rects += `<rect class="px-${c} ${frameClass}" x="${x0}" y="${y0}" width="${x1 - x0}" height="${y1 - y0}"/>`;
     }
   }
   return { rects, w: cols * cellW, h: rows * cellH };
