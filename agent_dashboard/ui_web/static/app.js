@@ -5184,6 +5184,7 @@ setInterval(applyTimeOfDay, 10 * 60 * 1000);
   let resting = false;
   let restUntil = 0;
   let nextRest = 0;             // 이 시각 전엔 안 쉼
+  let _mascotLastTick = 0;      // 30fps 스로틀용 마지막 갱신 시각
 
   function rand(min, max) { return min + Math.random() * (max - min); }
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
@@ -5218,7 +5219,12 @@ setInterval(applyTimeOfDay, 10 * 60 * 1000);
   function tick(ts) {
     requestAnimationFrame(tick);
     if (motionQ.matches) return;
+    if (document.hidden) return;        // 숨은 탭에선 일 안 함 (CPU 절약)
     if (currentRoom()) return;
+    // 30fps 스로틀 — 느리게 배회하는 고양이는 60fps 불필요. 매 프레임 querySelector/
+    // style 갱신을 절반으로 줄여 메인스레드 부하 감소.
+    if (ts - _mascotLastTick < 33) return;
+    _mascotLastTick = ts;
     const layer = mascotLayerEl();
     if (!layer || !layer.isConnected) return;
     const mascot = layer.querySelector('.town-mascot');
@@ -5411,6 +5417,16 @@ if (_previewMode === 'motions') {
 } else if (_previewMode === 'codex') {
   renderCodexPreview();
 } else {
-  setInterval(() => { if (lastSnap) render(lastSnap); }, 3000);
+  // 시간경과 기반 라벨/상태("6초 전", busy→done)만 갱신하는 안전 재렌더.
+  // 실데이터 변화는 SSE(connect)가 즉시 푸시하므로 인터벌은 길어도 됨 — 3s→12s 로
+  // 늘려 전체 innerHTML 재빌드(무거운 CPU/GC)를 4배 줄였다. hidden 탭에선 건너뜀.
+  setInterval(() => { if (lastSnap && !document.hidden) render(lastSnap); }, 12000);
   connect();
+  // 탭이 안 보일 때 모든 CSS 애니메이션 정지(body.cpu-idle) → 백그라운드 CPU ~0.
+  const _applyVis = () => {
+    document.body.classList.toggle('cpu-idle', document.hidden);
+    if (!document.hidden && lastSnap) render(lastSnap);   // 복귀 시 1회 최신화
+  };
+  document.addEventListener('visibilitychange', _applyVis);
+  _applyVis();
 }

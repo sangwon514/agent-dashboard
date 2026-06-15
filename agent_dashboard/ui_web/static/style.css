@@ -3892,3 +3892,9 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
 .gazette-text b { color: #9a5b2a; font-weight: 600; }
 :root[data-theme="dark"] .gazette-text b { color: #e8a86a; }
 @media (prefers-reduced-motion: reduce) { .gazette-track { animation: none; } }
+
+/* CPU 세이버 — 탭이 보이지 않을 때 모든 애니메이션 정지(백그라운드 CPU ~0).
+   app.js 가 visibilitychange 에서 body.cpu-idle 토글. */
+body.cpu-idle *,
+body.cpu-idle *::before,
+body.cpu-idle *::after { animation-play-state: paused !important; }
