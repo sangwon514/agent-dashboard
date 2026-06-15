@@ -3059,6 +3059,34 @@ function humanIdleVariant(sessionId) {
   return HUMAN_IDLE_VARIANTS[djb2((sessionId || '') + 'idle') % HUMAN_IDLE_VARIANTS.length];
 }
 
+// ── 토큰 먹이그릇 (Token Bowl) ───────────────────────────────────
+// 펫이 먹은 토큰 = 먹이. 사용자가 가장 알고싶은 "비용" 을 펫-키퍼 메타포로.
+function formatTokens(n) {
+  if (!n || n <= 0) return '';
+  if (n < 1000) return `${n}`;
+  if (n < 1e6) return `${(n / 1000).toFixed(1)}k`;
+  return `${(n / 1e6).toFixed(2)}M`;
+}
+// 그릇(접시+먹이 더미) — 펫 발치에 둠. 먹이 더미는 scaleY 로 차오름(레이아웃 변경 X).
+function tokenBowlHTML(p) {
+  const tokens = p.tokens || 0;
+  if (tokens <= 0) return '';
+  // 로그 스케일 차오름: 1e6 토큰이면 가득(1.0), 작아도 최소 0.2 는 보이게.
+  const fill = Math.max(0.2, Math.min(1, Math.log10(tokens + 1) / 6));
+  return `<div class="token-bowl" style="--bowl-fill:${fill.toFixed(2)};" aria-hidden="true">`
+    + `<span class="bowl-food"></span><span class="bowl-dish"></span></div>`;
+}
+function tokenLabelHTML(p, mini = false) {
+  const tokens = p.tokens || 0;
+  if (tokens <= 0) return '';
+  return `<div class="token-label${mini ? ' mini' : ''}" aria-hidden="true">🍪 ${formatTokens(tokens)}</div>`;
+}
+function tokenTooltipSuffix(p) {
+  const tokens = p.tokens || 0;
+  if (tokens <= 0) return '';
+  return ` · 먹은 토큰 ${formatTokens(tokens)}${p.toolUses > 0 ? ` (tool ${p.toolUses}회)` : ''}`;
+}
+
 // ── 펫 카드 (캐릭터) ─────────────────────────────────────────────
 function petHTML(p, { mini = false } = {}) {
   const isEgg = p.type === '__egg__';
@@ -3079,7 +3107,7 @@ function petHTML(p, { mini = false } = {}) {
   const labelText = isEgg ? '아직 호출 없음' : getPetDisplay(p.type);
   const tooltip = isEgg
     ? '이 세션은 아직 서브에이전트를 호출하지 않았어요'
-    : `${p.type} — ${PET_STATE_LABEL[state]} (총 ${p.calls}회 호출)${quest ? '\n최근 임무: ' + quest : ''}`;
+    : `${p.type} — ${PET_STATE_LABEL[state]} (총 ${p.calls}회 호출)${tokenTooltipSuffix(p)}${quest ? '\n최근 임무: ' + quest : ''}`;
   const scale = mini ? 2 : 4;
   const sprite = renderSprite(spriteFor(p.type, p.calls), scale);
   const styleVars = `--phase:${phase}s; --wander-phase:${wanderPhase}s; --char:${bodyColor(st.hue)}; --char-dark:${bodyColorDark(st.hue)};`;
@@ -3088,15 +3116,18 @@ function petHTML(p, { mini = false } = {}) {
       ${(!mini && state === 'busy' && questShort) ? `<div class="bubble">${escapeHtml(questShort)}</div>` : ''}
       ${(!mini && state === 'sleeping') ? `<div class="zzz">💤</div>` : ''}
       ${actTag ? `<div class="activity-chip"><span class="chip-text">${actTag.label}</span></div>` : ''}
-      <div class="avatar${mini ? ' mini' : ''}">
+      <div class="avatar${mini ? ' mini' : ''}"${isEgg ? '' : ` title="${escapeHtml(tooltip)}"`}>
         <div class="shadow"></div>
         <div class="sprite-wrap">${sprite}</div>
         ${(state === 'busy' && actTag?.prop) ? `<div class="prop-wrap prop-${actTag.tag}">${renderSprite(actTag.prop, mini ? 1 : scale - 1)}</div>` : ''}
         ${(!mini && !isEgg && p.calls > 0) ? `<div class="${p.calls >= 50 ? 'badge ascended' : (p.calls >= 20 ? 'badge evolved' : (p.calls >= 15 ? 'badge near-evolution' : 'badge'))}">🔁 ${p.calls}</div>` : ''}
         ${(!isEgg && isPetFav(p.type)) ? `<div class="fav-star">★</div>` : ''}
+        ${(!mini && !isEgg) ? tokenBowlHTML(p) : ''}
       </div>
+      ${(mini && !isEgg) ? tokenLabelHTML(p, true) : ''}
       ${mini ? '' : `<div class="char-label" data-pet-type="${escapeHtml(p.type)}">${escapeHtml(labelText)}<button class="fav-toggle" data-pet-type="${escapeHtml(p.type)}">${isPetFav(p.type) ? '★' : '☆'}</button></div>`}
       ${mini ? '' : `<div class="char-state">${PET_STATE_ICON[state]} ${PET_STATE_LABEL[state]}</div>`}
+      ${(!mini && !isEgg) ? tokenLabelHTML(p, false) : ''}
     </div>`;
 }
 
@@ -3132,10 +3163,12 @@ function petsOf(s, now) {
     const t = e.subagent_type || '익명';
     let p = byType.get(t);
     if (!p) {
-      p = { type: t, calls: 0, running: 0, latest: null, latestRunning: null, latestProblem: null };
+      p = { type: t, calls: 0, running: 0, tokens: 0, toolUses: 0, latest: null, latestRunning: null, latestProblem: null };
       byType.set(t, p);
     }
     p.calls += 1;
+    p.tokens += (e.tokens || 0);
+    p.toolUses += (e.tool_use_count || 0);
     const evTime = eventTime(e);
     if (!p.latest || evTime > eventTime(p.latest)) p.latest = e;
     if (e.status === 'running') {
@@ -3204,18 +3237,19 @@ function townCounts(snap) {
   return counts;
 }
 function projectStats(sessions) {
-  let busy = 0, hurt = 0, stuck = 0, sleeping = 0, totalPets = 0, lastAct = '';
+  let busy = 0, hurt = 0, stuck = 0, sleeping = 0, totalPets = 0, tokens = 0, lastAct = '';
   for (const s of sessions) {
     if ((s.last_activity||'') > lastAct) lastAct = s.last_activity || '';
     for (const p of (s.pets || [])) {
       totalPets++;
+      tokens += (p.tokens || 0);
       if (p.state === 'busy') busy++;
       else if (p.state === 'hurt') hurt++;
       else if (p.state === 'stuck') stuck++;
       else sleeping++;
     }
   }
-  return { sessions: sessions.length, busy, hurt, stuck, sleeping, totalPets, last_activity: lastAct };
+  return { sessions: sessions.length, busy, hurt, stuck, sleeping, totalPets, tokens, last_activity: lastAct };
 }
 
 // 집 위 "기분 날씨" — 프로젝트의 펫 집계로 우선순위 상태 1개 결정.
@@ -3326,6 +3360,7 @@ function renderLobby(snap) {
         </div>
         <div class="room-meta">
           ${stats.sessions}명 거주 · 펫 ${stats.totalPets}마리
+          ${stats.tokens > 0 ? ` · 🍪 ${formatTokens(stats.tokens)}` : ''}
           ${stats.busy ? ` · <span class="dot running"></span>${stats.busy} 일하는 중` : ''}
           ${stats.hurt ? ` · <span class="dot failed"></span>${stats.hurt} 실패` : ''}
           ${stats.stuck ? ` · <span class="dot stale"></span>${stats.stuck} 응답없음` : ''}
@@ -3716,6 +3751,7 @@ function renderRoom(snap, projectKeyName) {
 
   const totalPets = ordered.reduce((sum, s) => sum + (s.pets?.length || 0), 0);
   const busyCount = ordered.reduce((sum, s) => sum + (s.pets || []).filter(p => p.state === 'busy').length, 0);
+  const totalTokens = ordered.reduce((sum, s) => sum + (s.pets || []).reduce((a, p) => a + (p.tokens || 0), 0), 0);
 
   return `
     <div class="room-header">
@@ -3723,6 +3759,7 @@ function renderRoom(snap, projectKeyName) {
       <div class="room-title-big">${renderSprite('door', 2)} ${escapeHtml(projectKeyName)}</div>
       <div class="room-meta-line muted">
         ${sessions.length}명 거주${roomHidden > 0 ? ` <span class="room-cap-note">(최근 ${ROOM_CAP}명 표시 · +${roomHidden})</span>` : ''} · 펫 ${totalPets}마리
+        ${totalTokens > 0 ? ` · 🍪 ${formatTokens(totalTokens)}` : ''}
         ${busyCount > 0 ? ` · ${busyCount}마리 일하는 중` : ''}
       </div>
     </div>
@@ -3769,7 +3806,7 @@ function petInSceneHTML(p, sessionId, opts = {}) {
   const labelText = isEgg ? '아직 호출 없음' : getPetDisplay(p.type);
   const tooltip = isEgg
     ? '이 세션은 아직 서브에이전트를 호출하지 않았어요'
-    : `${p.type} — ${PET_STATE_LABEL[state]} (총 ${p.calls}회 호출)${quest ? '\n최근 임무: ' + quest : ''}`;
+    : `${p.type} — ${PET_STATE_LABEL[state]} (총 ${p.calls}회 호출)${tokenTooltipSuffix(p)}${quest ? '\n최근 임무: ' + quest : ''}`;
   const sprite = renderSprite(spriteFor(p.type, p.calls), 3);
   const styleVars =
     `--phase:${phase}s; --wander-phase:${wanderPhase}s; --char:${bodyColor(st.hue)}; --char-dark:${bodyColorDark(st.hue)}; ` +
@@ -3779,14 +3816,16 @@ function petInSceneHTML(p, sessionId, opts = {}) {
       ${(state === 'busy' && questShort) ? `<div class="bubble">${escapeHtml(questShort)}</div>` : ''}
       ${(state === 'sleeping') ? `<div class="zzz">💤</div>` : ''}
       ${actTag ? `<div class="activity-chip"><span class="chip-text">${actTag.label}</span></div>` : ''}
-      <div class="avatar">
+      <div class="avatar"${isEgg ? '' : ` title="${escapeHtml(tooltip)}"`}>
         <div class="shadow"></div>
         <div class="sprite-wrap">${sprite}</div>
         ${(state === 'busy' && actTag?.prop) ? `<div class="prop-wrap prop-${actTag.tag}">${renderSprite(actTag.prop, 2)}</div>` : ''}
         ${(!isEgg && p.calls > 0) ? `<div class="badge">🔁 ${p.calls}</div>` : ''}
         ${(!isEgg && isPetFav(p.type)) ? `<div class="fav-star">★</div>` : ''}
+        ${!isEgg ? tokenBowlHTML(p) : ''}
       </div>
       <div class="char-label" data-pet-type="${escapeHtml(p.type)}">${escapeHtml(labelText)}<button class="fav-toggle" data-pet-type="${escapeHtml(p.type)}">${isPetFav(p.type) ? '★' : '☆'}</button></div>
+      ${!isEgg ? tokenLabelHTML(p, false) : ''}
     </div>`;
 }
 
