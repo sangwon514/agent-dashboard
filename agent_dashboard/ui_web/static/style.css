@@ -2782,6 +2782,38 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
 
 .pet:not(.pet-busy) .activity-chip { display: none; }
 
+/* busy 경과시간 칩 — activity-chip 위에 스택. 정적(무한 애니 X), 매초 textContent 만 갱신 */
+.pet .pet-timer {
+  position: absolute;
+  top: -27px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 6px;
+  font-size: 9.5px;
+  line-height: 1;
+  font-weight: 700;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  letter-spacing: 0.02em;
+  background: rgba(28, 22, 14, 0.78);
+  color: #ffe9c2;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  box-shadow: 0 1px 0 rgba(0,0,0,.3);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 5;
+}
+.pet:not(.pet-busy) .pet-timer { display: none; }
+/* 오래 걸리면 살짝 주황 — 정체 힌트 (애니 없이 색만) */
+.pet .pet-timer.pet-timer--stale {
+  background: rgba(120, 60, 14, 0.85);
+  color: #ffd9a0;
+  border-color: rgba(255, 170, 90, 0.45);
+}
+
 /* tag 별 chip 배경 hue 살짝 다르게 */
 .pet.tag-inspect .activity-chip { background: rgba(40, 30, 18, 0.88); border-color: rgba(255,200,120,.25); }
 .pet.tag-build   .activity-chip { background: rgba(45, 25, 18, 0.88); border-color: rgba(255,150,100,.30); }

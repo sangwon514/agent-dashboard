@@ -3092,6 +3092,62 @@ function tokenTooltipSuffix(p) {
   return ` · 먹은 토큰 ${formatTokens(tokens)}${p.toolUses > 0 ? ` (tool ${p.toolUses}회)` : ''}`;
 }
 
+// ── busy 경과시간 칩 (Busy Elapsed Timer) ────────────────────────
+// busy 펫이 "얼마나 오래 일하나 / 멈춘 건 아닌가" 직감용. 칩 노드는
+// data-started(ms epoch) 만 들고, 매초 갱신은 단일 전역 ticker
+// (_petTimerTicker) 가 textContent / stale 클래스만 바꾼다 — 펫마다
+// 타이머를 만들지 않는다(jank 가드).
+const PET_TIMER_STALE_SEC = 120;  // 2분+ → 정체 힌트(주황)
+function petTimerStartedMs(p) {
+  if (p.state !== 'busy') return null;
+  const lr = p.latestRunning;
+  if (!lr) return null;
+  // age_sec(snapshot 기준 경과초)을 절대 시작시각으로 환산 → 라이브 ticking 안정.
+  if (typeof lr.age_sec === 'number') return Date.now() - lr.age_sec * 1000;
+  if (lr.started_at) {
+    const t = new Date(lr.started_at).getTime();
+    if (!Number.isNaN(t)) return t;
+  }
+  return null;
+}
+function fmtElapsed(sec) {
+  sec = Math.max(0, Math.floor(sec));
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}`;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+function petTimerHTML(p) {
+  const started = petTimerStartedMs(p);
+  if (started == null) return '';
+  const sec = Math.max(0, (Date.now() - started) / 1000);
+  const stale = sec > PET_TIMER_STALE_SEC ? ' pet-timer--stale' : '';
+  return `<div class="pet-timer${stale}" data-started="${Math.round(started)}" aria-hidden="true">⏱ ${fmtElapsed(sec)}</div>`;
+}
+// 전역 ticker — 단일 setInterval 하나로 화면의 모든 busy 타이머 갱신.
+// render 가 DOM 을 재생성해도 interval 은 살아있게 window 가드(_boardRotator
+// 패턴 동일). 갱신은 textContent + classList 토글만(레이아웃 read/write·innerHTML 재생성 X).
+function tickPetTimers() {
+  const now = Date.now();
+  const chips = document.querySelectorAll('.pet-timer[data-started]');
+  for (let i = 0; i < chips.length; i++) {
+    const el = chips[i];
+    const started = Number(el.dataset.started);
+    if (!Number.isFinite(started)) continue;
+    const sec = Math.max(0, (now - started) / 1000);
+    const next = '⏱ ' + fmtElapsed(sec);
+    if (el.textContent !== next) el.textContent = next;
+    const stale = sec > PET_TIMER_STALE_SEC;
+    if (stale !== el.classList.contains('pet-timer--stale')) {
+      el.classList.toggle('pet-timer--stale', stale);
+    }
+  }
+}
+if (!window._petTimerTicker) {
+  window._petTimerTicker = setInterval(tickPetTimers, 1000);
+}
+
 // ── 펫 카드 (캐릭터) ─────────────────────────────────────────────
 function petHTML(p, { mini = false } = {}) {
   const isEgg = p.type === '__egg__';
@@ -3121,6 +3177,7 @@ function petHTML(p, { mini = false } = {}) {
       ${(!mini && state === 'busy' && questShort) ? `<div class="bubble">${escapeHtml(questShort)}</div>` : ''}
       ${(!mini && state === 'sleeping') ? `<div class="zzz">💤</div>` : ''}
       ${actTag ? `<div class="activity-chip"><span class="chip-text">${actTag.label}</span></div>` : ''}
+      ${!mini ? petTimerHTML(p) : ''}
       <div class="avatar${mini ? ' mini' : ''}"${isEgg ? '' : ` title="${escapeHtml(tooltip)}"`}>
         <div class="shadow"></div>
         <div class="sprite-wrap">${sprite}</div>
@@ -3858,6 +3915,7 @@ function petInSceneHTML(p, sessionId, opts = {}) {
       ${(state === 'busy' && questShort) ? `<div class="bubble">${escapeHtml(questShort)}</div>` : ''}
       ${(state === 'sleeping') ? `<div class="zzz">💤</div>` : ''}
       ${actTag ? `<div class="activity-chip"><span class="chip-text">${actTag.label}</span></div>` : ''}
+      ${petTimerHTML(p)}
       <div class="avatar"${isEgg ? '' : ` title="${escapeHtml(tooltip)}"`}>
         <div class="shadow"></div>
         <div class="sprite-wrap">${sprite}</div>
