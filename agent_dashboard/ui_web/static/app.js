@@ -911,10 +911,10 @@ const SPRITES = {
   // 머리카락 오버레이 — 16w × 20h, 머리 영역(rows 1-8)만 색, 나머지 투명
   // H = hair-light (--hair), K = hair-dark (--hair-dark) — frontend-dev 가 CSS 변수 추가 예정
   'hair-short': [[
-    "......K.........",   // 0 ahoge — 1px hair tip 위로 (chibi 시그니처)
+    "......K.........",   // 0 ahoge (비대칭 — 왼쪽 치우침)
     "...KKKKKKKKKK...",   // 1 정수리 outline
-    "..KKHHHHHHHHKK..",   // 2 크라운 interior H (머리 상단 shading, 얼굴 위)
-    "..KKKKKKKKKKKK..",   // 3 bangs K only (얼굴 위치 — H 띠 X)
+    "..KKKKKKKKKKK...",   // 2 크라운 K fill (두피 안 비침)
+    "..KKHKKKKKKKK...",   // 3 H 하이라이트 2px, 왼쪽 치우침 (띠 아님)
     ".KKKKKKKKKKKKKK.",   // 4 bangs wider K
     "..K..........K..",   // 5 side wisps
     "................",
@@ -934,8 +934,8 @@ const SPRITES = {
   ], [
     "......K.........",   // frame2 = frame1 (hair static)
     "...KKKKKKKKKK...",
-    "..KKHHHHHHHHKK..",
-    "..KKKKKKKKKKKK..",
+    "..KKKKKKKKKKK...",
+    "..KKHKKKKKKKK...",
     ".KKKKKKKKKKKKKK.",
     "..K..........K..",
     "................",
@@ -956,8 +956,8 @@ const SPRITES = {
   'hair-long': [[
     "................",
     "...KKKKKKKKKK...",   // 1 정수리 outline
-    "..KKHHHHHHHHKK..",   // 2 크라운 interior H (머리 상단 shading)
-    ".KKKKKKKKKKKKKK.",   // 3 bangs K only (얼굴 위치)
+    "..KKKKKKKKKKKK..",   // 2 크라운 K fill (두피 안 비침)
+    ".KKKHKKKKKKKKKK.",   // 3 H 하이라이트 1px 왼쪽 (띠 아님) + bangs K
     ".KK..........KK.",   // 4 side curtain — 가운데 비움
     ".KK..........KK.",   // 5
     ".KK..........KK.",   // 6
@@ -977,8 +977,8 @@ const SPRITES = {
   ], [
     "................",
     "...KKKKKKKKKK...",   // frame2 same as frame1
-    "..KKHHHHHHHHKK..",
-    ".KKKKKKKKKKKKKK.",
+    "..KKKKKKKKKKKK..",
+    ".KKKHKKKKKKKKKK.",
     ".KK..........KK.",
     ".KK..........KK.",
     ".KK..........KK.",
@@ -998,10 +998,10 @@ const SPRITES = {
   ]],
   'hair-bun': [[
     ".....KKKK.......",   // 0 묶음 윗부분 (bun top)
-    "....KKHHKK......",   // 1 묶음 본체 (H interior — bun shading)
+    "....KKHHKK......",   // 1 묶음 본체 (H 2px — bun 전용 하이라이트)
     "...KKKKKKKKKK...",   // 2 정수리 outline
-    "..KKHHHHHHHHKK..",   // 3 크라운 interior H
-    "..KKKKKKKKKKKK..",   // 4 bangs K only (얼굴 위치)
+    "..KKKKKKKKKKK...",   // 3 크라운 K fill (두피 안 비침)
+    "..KKHKKKKKKKK...",   // 4 H 하이라이트 1px 왼쪽 치우침 + bangs
     "................",
     "................",
     "................",
@@ -1021,8 +1021,8 @@ const SPRITES = {
     ".....KKKK.......",   // frame2 same as frame1
     "....KKHHKK......",
     "...KKKKKKKKKK...",
-    "..KKHHHHHHHHKK..",
-    "..KKKKKKKKKKKK..",
+    "..KKKKKKKKKKK...",
+    "..KKHKKKKKKKK...",
     "................",
     "................",
     "................",
@@ -1042,10 +1042,10 @@ const SPRITES = {
   // 스파이크 헤어 오버레이 — 16w × 20h, rows 0-3 만 사용
   // 4개 스파이크, 각 2px 폭 (no single-pixel tips), 비대칭: 4번째 스파이크 오른쪽에 큰 간격
   'hair-spiky': [[
-    "..KK.KK.KK..KK..",   // 0 스파이크 팁 (4 spikes, asymm)
+    "..KK.KK.KK..KK..",   // 0 스파이크 팁 (4 spikes, asymm — 3번째 간격 넓음)
     "..KKKKKKKKKKKK..",   // 1 스파이크 베이스 outline
-    "..KKHHHHHHHHKK..",   // 2 헤드 인테리어 H (머리 상단 shading)
-    ".KKKKKKKKKKKKKK.",   // 3 앞머리 K only (얼굴 위치)
+    "..KKKKKKKKKKKK..",   // 2 크라운 K fill (두피 안 비침)
+    ".KKKHKKKKKKKKKK.",   // 3 H 하이라이트 1px 왼쪽 + 앞머리 K
     "................",
     "................",
     "................",
@@ -1065,8 +1065,8 @@ const SPRITES = {
   ], [
     "..KK.KK.KK..KK..",   // frame2 same as frame1
     "..KKKKKKKKKKKK..",
-    "..KKHHHHHHHHKK..",
-    ".KKKKKKKKKKKKKK.",
+    "..KKKKKKKKKKKK..",
+    ".KKKHKKKKKKKKKK.",
     "................",
     "................",
     "................",
@@ -1089,8 +1089,8 @@ const SPRITES = {
   'hair-ponytail': [[
     "................",
     "...KKKKKKKKKK...",   // 1 정수리 outline
-    "..KKHHHHHHHHKK..",   // 2 헤드 인테리어 H (머리 상단 shading)
-    "..KKKKKKKKKKKK..",   // 3 앞머리 K only (얼굴 위치)
+    "..KKKKKKKKKKKK..",   // 2 크라운 K fill (두피 안 비침)
+    "..KKHKKKKKKKKKK.",   // 3 H 하이라이트 1px 왼쪽 + 앞머리 K (비대칭)
     ".............KKK",   // 4 포니테일 상단 (오른쪽)
     ".............KKK",   // 포니테일 중단
     "..............KK",   // 포니테일 끝 (2px 캡)
@@ -1110,8 +1110,8 @@ const SPRITES = {
   ], [
     "................",   // frame2 same as frame1
     "...KKKKKKKKKK...",
-    "..KKHHHHHHHHKK..",
     "..KKKKKKKKKKKK..",
+    "..KKHKKKKKKKKKK.",
     ".............KKK",
     ".............KKK",
     "..............KK",
