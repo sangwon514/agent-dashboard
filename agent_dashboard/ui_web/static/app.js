@@ -3442,6 +3442,92 @@ if (!window._boardRotator) {
   window._boardRotator = setInterval(rotateBoards, 4000);
 }
 
+// ── 오늘의 마을 소식 (Town Gazette) ──────────────────────────────
+// 하단 중앙 pill 배너. lastSnap 의 모든 세션 이벤트를 최근순으로 모아
+// "누가·어디서·뭘 했나" 한 줄을 3.5초마다 fade 회전. 이벤트 0개면 숨김.
+const GAZETTE_STATUS_KO = {
+  running: '일하는 중',
+  done:    '끝냈어요',
+  failed:  '실패했어요',
+  stale:   '멈춘 듯',
+};
+let _gazetteIdx = 0;
+let _gazetteHeadlines = [];
+
+function buildGazetteHeadlines(snap) {
+  if (!snap || !snap.sessions) return [];
+  const rows = [];
+  for (const s of snap.sessions) {
+    // 긴 슬러그는 pill 너비를 잠식 → shortAlias 로 줄여 상태·시간 보존
+    const house = shortAlias(s.project_display || s.project_slug || '?');
+    for (const e of (s.events || [])) {
+      // 펫(서브에이전트) 소식만 — 메인 세션 자체 활동(type 없음)은 제외
+      if (!e.subagent_type) continue;
+      const whenIso = e.finished_at || e.started_at || e.started;
+      const t = new Date(whenIso || 0).getTime();
+      rows.push({
+        type:   e.subagent_type,
+        who:    getPetDisplay(e.subagent_type),
+        house,
+        status: e.status,
+        when:   timeSince(whenIso),
+        t:      isNaN(t) ? 0 : t,
+      });
+    }
+  }
+  rows.sort((a, b) => b.t - a.t);
+  return rows.slice(0, 8);
+}
+
+function fillGazetteLine(line) {
+  if (!line || !_gazetteHeadlines.length) return;
+  const h = _gazetteHeadlines[_gazetteIdx % _gazetteHeadlines.length];
+  const statusKo = GAZETTE_STATUS_KO[h.status] || h.status;
+  const icon = renderSprite(spriteFor(h.type), 2);
+  const tail = h.when ? ` · ${escapeHtml(h.when)}` : '';
+  line.innerHTML =
+    `<span class="gazette-face">${icon}</span>` +
+    `<span class="gazette-text">📣 ${escapeHtml(h.who)} 가 ` +
+    `<b>${escapeHtml(h.house)}</b> 에서 ${escapeHtml(statusKo)}${tail}</span>`;
+}
+
+function renderGazette(snap) {
+  const el = document.getElementById('gazette');
+  if (!el) return;
+  _gazetteHeadlines = buildGazetteHeadlines(snap);
+  if (!_gazetteHeadlines.length) {
+    el.style.display = 'none';
+    el.innerHTML = '';
+    return;
+  }
+  el.style.display = '';
+  if (!el.querySelector('.gazette-line')) {
+    el.innerHTML =
+      `<div class="gazette-label">오늘의 마을 소식 📰</div>` +
+      `<div class="gazette-line"></div>`;
+  }
+  if (_gazetteIdx >= _gazetteHeadlines.length) _gazetteIdx = 0;
+  fillGazetteLine(el.querySelector('.gazette-line'));
+}
+
+function rotateGazette() {
+  if (_gazetteHeadlines.length <= 1) return;
+  const el = document.getElementById('gazette');
+  if (!el || el.style.display === 'none') return;
+  const line = el.querySelector('.gazette-line');
+  if (!line) return;
+  line.classList.add('gazette-fading');     // fade-out (opacity/transform 만)
+  setTimeout(() => {
+    _gazetteIdx = (_gazetteIdx + 1) % _gazetteHeadlines.length;
+    fillGazetteLine(line);
+    void line.offsetWidth;                   // reflow → fade-in 트리거
+    line.classList.remove('gazette-fading');
+  }, 240);
+}
+if (!window._gazetteRotator) {
+  window._gazetteRotator = setInterval(rotateGazette, 3500);
+}
+
 // ── 방 안 렌더 ───────────────────────────────────────────────────
 function renderRoom(snap, projectKeyName) {
   const grouped = groupByProject(snap);
@@ -4354,6 +4440,9 @@ function _renderImpl(snap) {
   root.innerHTML = view + detailHTML(snap);
   restoreBirdFlybyLayer();
   mountIcons();
+
+  // 오늘의 마을 소식 배너 (씬 밖 fixed 요소 — root 재렌더와 독립)
+  renderGazette(snap);
 
   // 화이트보드 초기 텍스트
   if (room) rotateBoards();
