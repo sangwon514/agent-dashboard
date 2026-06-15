@@ -4286,6 +4286,45 @@ function renderCodex() {
 window.toggleCodex = () => { codexOpen = !codexOpen; renderCodex(); };
 window.closeCodex = () => { codexOpen = false; renderCodex(); };
 
+// ── 키보드 단축키 도움말 오버레이 ─────────────────────────────────
+// 독립 마운트(#kbd-help-root). 닫혀있으면 innerHTML='' → DOM 비용 0.
+let kbdHelpOpen = false;
+const KBD_SHORTCUTS = [
+  { keys: ['/'],         desc: '로비 검색창 포커스' },
+  { keys: ['Esc'],       desc: '패널 닫기 · 검색 비우기' },
+  { keys: ['←', '→'],    desc: '이웃 마을로 이동' },
+  { keys: ['F'],         desc: '활성 세션만 보기' },
+  { keys: ['D'],         desc: '펫 도감 열기 / 닫기' },
+  { keys: ['T'],         desc: '라이트 / 다크 테마' },
+  { keys: ['?'],         desc: '이 도움말 열기 / 닫기' },
+];
+function kbdHelpHTML() {
+  const rows = KBD_SHORTCUTS.map(s => {
+    const caps = s.keys
+      .map(k => `<kbd class="keycap">${escapeHtml(k)}</kbd>`)
+      .join('<span class="kbd-sep">·</span>');
+    return `<li><span class="kbd-keys">${caps}</span><span class="kbd-desc">${escapeHtml(s.desc)}</span></li>`;
+  }).join('');
+  return `
+    <div class="kbd-backdrop" onclick="window.closeKbdHelp()"></div>
+    <div class="kbd-panel open" role="dialog" aria-modal="true" aria-label="키보드 단축키">
+      <div class="kbd-head">
+        <h2>⌨️ 단축키</h2>
+        <button class="detail-close" type="button" onclick="window.closeKbdHelp()" aria-label="닫기">×</button>
+      </div>
+      <ul class="kbd-list">${rows}</ul>
+      <div class="kbd-foot muted">입력창에 포커스 중엔 단축키가 잠시 쉬어요 🌙</div>
+    </div>`;
+}
+function renderKbdHelp() {
+  const el = document.getElementById('kbd-help-root');
+  if (!el) return;
+  if (!kbdHelpOpen) { el.innerHTML = ''; return; }   // 닫힘 → DOM 비용 0
+  el.innerHTML = kbdHelpHTML();
+}
+window.toggleKbdHelp = () => { kbdHelpOpen = !kbdHelpOpen; renderKbdHelp(); };
+window.closeKbdHelp = () => { kbdHelpOpen = false; renderKbdHelp(); };
+
 // ── 라우팅 + 렌더 ───────────────────────────────────────────────
 // URL 스킴:
 //   `` (빈 hash)                       → claude lobby (default town)
@@ -4943,35 +4982,59 @@ document.addEventListener('click', (e) => {
 }, true);
 
 // ── 키보드 단축키 ────────────────────────────────────────────────
-// / → 검색창 포커스 · f → 필터 토글 · Esc → expanded 패널 닫기
+// / → 검색창 포커스 · f → 필터 · ←/→ → 마을 전환 · d → 도감 · t → 테마 · ? → 도움말
+// Esc → 열린 패널 닫기 → 없으면 검색어 클리어
 // input/textarea 포커스 중엔 Esc 외 단축키 무시
-document.addEventListener('keydown', (e) => {
-  const tag = document.activeElement?.tagName?.toLowerCase();
-  const inInput = tag === 'input' || tag === 'textarea' || document.activeElement?.isContentEditable;
+// window._kbdShortcuts 가드로 리스너 중복 등록 방지.
+if (!window._kbdShortcuts) {
+  window._kbdShortcuts = true;
+  document.addEventListener('keydown', (e) => {
+    const tag = document.activeElement?.tagName?.toLowerCase();
+    const inInput = tag === 'input' || tag === 'textarea' || document.activeElement?.isContentEditable;
 
-  if (e.key === 'Escape') {
-    if (codexOpen) { window.closeCodex?.(); return; }
-    if (openDetail) { openDetail = null; render(lastSnap); return; }
-    if (settingsOpen) { window.closeSettings?.(); return; }
-    if (lobbySearchQuery) { lobbySearchQuery = ''; render(lastSnap); return; }
-    return;
-  }
+    if (e.key === 'Escape') {
+      if (kbdHelpOpen) { window.closeKbdHelp?.(); return; }
+      if (codexOpen) { window.closeCodex?.(); return; }
+      if (openDetail) { openDetail = null; render(lastSnap); return; }
+      if (settingsOpen) { window.closeSettings?.(); return; }
+      if (lobbySearchQuery) { lobbySearchQuery = ''; render(lastSnap); return; }
+      return;
+    }
 
-  if (inInput) return;
+    if (inInput) return;
 
-  if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
-    e.preventDefault();
-    const searchEl = document.getElementById('lobby-search');
-    if (searchEl) searchEl.focus();
-    return;
-  }
+    if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      const searchEl = document.getElementById('lobby-search');
+      if (searchEl) searchEl.focus();
+      return;
+    }
 
-  if (e.key === 'f' && !e.ctrlKey && !e.metaKey && !currentRoom()) {
-    lobbyFilterActive = !lobbyFilterActive;
-    render(lastSnap);
-    return;
-  }
-});
+    if (e.key === 'f' && !e.ctrlKey && !e.metaKey && !currentRoom()) {
+      lobbyFilterActive = !lobbyFilterActive;
+      render(lastSnap);
+      return;
+    }
+
+    // ← / → : signpost 의 visibleTowns 순서로 이전/다음 마을 (setTown 재사용)
+    if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight')
+        && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+      if (kbdHelpOpen || codexOpen || settingsOpen || openDetail) return;
+      const counts = townCounts(lastSnap || { sessions: [] });
+      const cur = currentTown();
+      const visible = VALID_TOWNS.filter(t => (counts[t] || 0) > 0 || t === cur);
+      if (visible.length < 2) return;
+      const idx = Math.max(0, visible.indexOf(cur));
+      const dir = (e.key === 'ArrowLeft') ? -1 : 1;
+      setTown(visible[(idx + dir + visible.length) % visible.length]);
+      return;
+    }
+
+    if (e.key === 'd' && !e.ctrlKey && !e.metaKey) { window.toggleCodex?.(); return; }
+    if (e.key === 't' && !e.ctrlKey && !e.metaKey) { window.toggleTheme?.(); return; }
+    if (e.key === '?' && !e.ctrlKey && !e.metaKey) { window.toggleKbdHelp?.(); return; }
+  });
+}
 
 // 시간 기반 필터(30초 잔잔, 1시간 윈도우)가 자연스럽게 사라지게 하려면
 // 데이터 변경이 없어도 주기적으로 다시 그려야 함.

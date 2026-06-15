@@ -614,6 +614,58 @@ body[data-town="codex"] .scene .floor {
 .codex-fav:hover { opacity: 1; color: var(--accent); }
 .codex-card.fav .codex-fav { color: var(--accent); opacity: 1; }
 
+/* ── 키보드 단축키 도움말 오버레이 ─────────────────────────── */
+/* 작은 픽셀 카드. codex 오버레이와 동일 z-index 레이어(backdrop 40 / panel 41). */
+.kbd-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.32);
+  z-index: 40;
+  animation: codex-fade .14s ease;
+}
+.kbd-panel {
+  position: fixed; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(400px, 92vw); max-height: 84vh;
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 18px 48px rgba(0,0,0,.22);
+  padding: 0; overflow: hidden auto;
+  z-index: 41;
+}
+.kbd-panel.open { animation: codex-pop .16s ease; }
+.kbd-head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; border-bottom: 1px solid var(--line);
+}
+.kbd-head h2 { margin: 0; font-size: 15px; }
+.kbd-head .detail-close { margin-left: auto; float: none; }
+.kbd-list {
+  list-style: none; margin: 0; padding: 10px 14px 6px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.kbd-list li {
+  display: flex; align-items: center; gap: 12px;
+  padding: 7px 8px; border-radius: 8px;
+}
+.kbd-list li:hover { background: rgba(120,80,40,.05); }
+.kbd-keys { flex: 0 0 84px; display: flex; align-items: center; gap: 5px; }
+.kbd-sep { color: var(--muted); font-size: 11px; }
+.kbd-desc { font-size: 13px; color: var(--ink); }
+.keycap {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 24px; height: 24px; padding: 0 6px;
+  font-family: inherit; font-size: 12px; font-weight: 600;
+  color: var(--ink);
+  background: rgba(120,80,40,.10);
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  box-shadow: 0 1px 0 rgba(0,0,0,.06);
+}
+.kbd-foot {
+  padding: 8px 16px 14px; font-size: 11px; text-align: center;
+}
+
 main { padding: 28px 32px 80px; max-width: 1200px; margin: 0 auto; }
 
 footer {
