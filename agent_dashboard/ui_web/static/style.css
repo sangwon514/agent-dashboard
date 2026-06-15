@@ -2379,6 +2379,90 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
   50%      { opacity: 1; }
 }
 
+/* ── 마을 게시판 (Town Notice Board) ─────────────────────────────
+   로비 전경 좌하단의 작은 나무 팻말. 정적 오브젝트(살짝 흔들림 1개, 7s). */
+.town-board {
+  position: absolute;
+  left: 22%;
+  bottom: 4%;
+  z-index: 2;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform-origin: 50% 100%;
+  animation: tb-sway 7s ease-in-out infinite;
+  filter: drop-shadow(0 3px 4px rgba(40,20,0,.22));
+}
+.tb-sign {
+  position: relative;
+  width: 124px;
+  padding: 7px 9px 8px;
+  border-radius: 5px;
+  color: #f3e6c8;
+  /* 나무결: 가로 plank 줄무늬 + 세로 톤 */
+  background:
+    repeating-linear-gradient(0deg, rgba(0,0,0,.10) 0 1px, transparent 1px 13px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 2px, transparent 2px 6px),
+    linear-gradient(160deg, #8a5a2e 0%, #74471f 55%, #623a18 100%);
+  border: 2px solid #4d2f13;
+  box-shadow: inset 0 1px 0 rgba(255,235,200,.18), inset 0 -3px 5px rgba(0,0,0,.28);
+}
+/* 못 4개 — 모서리 */
+.tb-sign::before,
+.tb-sign::after {
+  content: "";
+  position: absolute;
+  top: 5px; bottom: 5px;
+  width: 4px;
+  /* 위/아래 못 점 2개를 radial-gradient 로 */
+  background:
+    radial-gradient(circle at 50% 4px, #d9c486 0 1.6px, transparent 2px),
+    radial-gradient(circle at 50% calc(100% - 4px), #d9c486 0 1.6px, transparent 2px);
+  background-repeat: no-repeat;
+}
+.tb-sign::before { left: 4px; }
+.tb-sign::after  { right: 4px; }
+.tb-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: .04em;
+  margin-bottom: 5px;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed rgba(243,230,200,.4);
+  text-shadow: 0 1px 1px rgba(0,0,0,.45);
+}
+.tb-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+  line-height: 1.25;
+  text-shadow: 0 1px 1px rgba(0,0,0,.4);
+}
+.tb-row { display: flex; align-items: baseline; gap: 4px; white-space: nowrap; }
+.tb-row .tb-ico { font-size: 11px; }
+.tb-row b { font-weight: 700; color: #ffe9b0; }
+.tb-top { overflow: hidden; text-overflow: ellipsis; }
+/* 땅에 박힌 말뚝 */
+.tb-post {
+  width: 9px;
+  height: 26px;
+  margin-top: -1px;
+  background: linear-gradient(90deg, #5a3416 0%, #7a4a22 45%, #4d2c12 100%);
+  border: 1px solid #3d2410;
+  border-top: none;
+  border-radius: 0 0 2px 2px;
+}
+@keyframes tb-sway {
+  0%, 100% { transform: rotate(-0.8deg); }
+  50%      { transform: rotate(0.8deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .town-board { animation: none; }
+}
+
 /* 구름 wandering — lobby sky zone */
 .cloud-small-deco {
   animation: cloud-drift-wide 60s linear infinite;

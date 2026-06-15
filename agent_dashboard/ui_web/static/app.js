@@ -3276,9 +3276,56 @@ function houseMood(sessions) {
   return { state: 'peace', icon: '💤', label: '평화로움', count: 0 };
 }
 
+// ── 마을 게시판 (Town Notice Board) ──────────────────────────────
+// 로비 전경에 선 작은 나무 팻말. 현재 마을 표시중 세션들의 "오늘 한눈 요약".
+// groupByProject 결과(=petsOf 캐시)를 재사용해 집계만 — 추가 순회 비용 최소.
+function townSummary(grouped) {
+  let busy = 0, tokens = 0, calls = 0;
+  const callsByType = new Map();
+  for (const k of Object.keys(grouped)) {
+    for (const s of grouped[k]) {
+      for (const p of (s.pets || [])) {
+        if (p.type === '__egg__') continue;  // 아직 호출 없는 알은 제외
+        tokens += (p.tokens || 0);
+        calls += (p.calls || 0);
+        if (p.state === 'busy') busy++;
+        callsByType.set(p.type, (callsByType.get(p.type) || 0) + (p.calls || 0));
+      }
+    }
+  }
+  let topType = null, topCalls = 0;
+  for (const [t, c] of callsByType) {
+    if (c > topCalls) { topCalls = c; topType = t; }
+  }
+  return { busy, tokens, calls, topType };
+}
+
+function townBoardHTML(grouped) {
+  const sum = townSummary(grouped);
+  // 아무 활동도 없으면 게시판 자체를 숨김 (빈 0 나열 방지).
+  if (sum.calls === 0 && sum.busy === 0 && sum.tokens === 0) return '';
+  const topName = sum.topType ? getPetDisplay(sum.topType) : '—';
+  const topShort = topName.length > 10 ? topName.slice(0, 10) + '…' : topName;
+  const tokTxt = sum.tokens > 0 ? formatTokens(sum.tokens) : '0';
+  return `
+  <div class="town-board" aria-label="오늘의 마을 요약">
+    <div class="tb-sign">
+      <div class="tb-title">오늘의 마을</div>
+      <div class="tb-rows">
+        <div class="tb-row"><span class="tb-ico" aria-hidden="true">👷</span><b>${sum.busy}</b> 일하는 중</div>
+        <div class="tb-row"><span class="tb-ico" aria-hidden="true">🍪</span><b>${tokTxt}</b></div>
+        <div class="tb-row"><span class="tb-ico" aria-hidden="true">⭐</span><span class="tb-top">${escapeHtml(topShort)}</span></div>
+        <div class="tb-row"><span class="tb-ico" aria-hidden="true">🔁</span><b>${sum.calls}</b>회</div>
+      </div>
+    </div>
+    <div class="tb-post" aria-hidden="true"></div>
+  </div>`;
+}
+
 // ── 로비 렌더 ────────────────────────────────────────────────────
 function renderLobby(snap) {
   const grouped = groupByProject(snap);
+  const townBoard = townBoardHTML(grouped);
   const keys = Object.keys(grouped).sort((a, b) => {
     const sa = projectStats(grouped[a]);
     const sb = projectStats(grouped[b]);
@@ -3446,7 +3493,7 @@ function renderLobby(snap) {
     <div class="cloud-small-deco vb cloud" style="left:60%; top:14%; animation-duration:80s; animation-direction:reverse;">${renderSprite('cloud-small', 1)}</div>
   </div>`;
   // humanoid 는 이제 각 card 내부 .card-occupant 에 렌더 — 카드 발치에 자리잡음.
-  return `<div class="lobby-wrap">${villageBg}${lobbyControls}<div class="rooms">${cards}</div></div>`;
+  return `<div class="lobby-wrap">${villageBg}${townBoard}${lobbyControls}<div class="rooms">${cards}</div></div>`;
 }
 
 // ── 일별 시간대 히스토그램 ────────────────────────────────────────
