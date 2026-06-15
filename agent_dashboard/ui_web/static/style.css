@@ -2453,8 +2453,76 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
   87.5% { left: 5%;   transform: translateY(var(--bob-amp, 8px)); }
   100%  { left: -10%; transform: translateY(0); }
 }
+/* ── Town mascot — 로비 바닥을 어슬렁거리는 동네 고양이 ── */
+.town-mascot-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;   /* 레이어는 클릭 통과, 고양이만 받음 */
+  z-index: 2;             /* 카드 위 전경 바닥 critter */
+  overflow: visible;
+}
+.town-mascot {
+  position: absolute;
+  left: 0;
+  bottom: 6.5%;
+  width: 48px;
+  height: 48px;
+  pointer-events: auto;
+  cursor: pointer;
+  will-change: transform;
+  transform: translateX(0);   /* JS 가 매 tick 갱신 */
+}
+.town-mascot .mascot-flip {
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 100%;
+}
+.town-mascot .sprite-wrap {
+  display: block;
+  filter: drop-shadow(0 1px 0 rgba(0,0,0,.2));
+}
+.town-mascot svg { display: block; image-rendering: pixelated; }
+.town-mascot .mascot-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: -2px;
+  width: 34px;
+  height: 9px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at center, rgba(0,0,0,.28) 0%, rgba(0,0,0,0) 70%);
+  pointer-events: none;
+}
+/* 따뜻한 크림빛 고양이 톤 (펫 갈색 폴백 위에 덮기) */
+.town-mascot .sprite .px-L { fill: #f0c890; }   /* 몸통 */
+.town-mascot .sprite .px-D { fill: #b07a3c; }   /* 외곽/줄무늬 */
+.town-mascot .sprite .px-E { fill: #2a2018; }   /* 눈 */
+.town-mascot .sprite .px-M { fill: #e88a8a; }   /* 코/입 */
+.town-mascot .sprite .px-A { fill: #f4b9b0; }   /* 볼 */
+/* walk-cycle — 걸을 때만 frame 토글 + 바닥 bob (pet walk tick 재사용) */
+.town-mascot.walking .sprite.two-frame .frame-1 { animation: tick-on  0.34s steps(1) infinite; }
+.town-mascot.walking .sprite.two-frame .frame-2 { animation: tick-off 0.34s steps(1) infinite; }
+.town-mascot.walking .sprite-wrap { animation: mascot-bob 0.34s ease-in-out infinite; }
+@keyframes mascot-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-2px); }
+}
+/* rest — 멈춰 앉기/하품 미세 모션 */
+.town-mascot.resting .mascot-flip { animation: mascot-sit 4s ease-in-out infinite; }
+@keyframes mascot-sit {
+  0%, 100%   { transform: scaleY(1)    translateY(0); }
+  8%, 78%    { transform: scaleY(.92)  translateY(2px); }   /* 앉음 */
+  40%, 46%   { transform: scaleY(.88)  translateY(3px); }   /* 하품 살짝 더 웅크림 */
+}
+/* 클릭 폴짝 — 기존 poke-bounce keyframe 재사용 */
+.town-mascot .sprite-wrap.poked { animation: poke-bounce .5s ease-out !important; }
+
 @media (prefers-reduced-motion: reduce) {
   .bird-flyby { animation: none !important; }
+  .town-mascot .sprite-wrap,
+  .town-mascot .mascot-flip,
+  .town-mascot.walking .sprite.two-frame .frame-1,
+  .town-mascot.walking .sprite.two-frame .frame-2,
+  .town-mascot .sprite-wrap.poked { animation: none !important; }
   .vb-stars { animation: none !important; }
   .village-bg .vb.grass, .village-bg .vb.flower { animation: none !important; }
   .lobby-fountain .sprite .px-E,

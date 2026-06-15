@@ -3316,7 +3316,7 @@ function renderLobby(snap) {
       : '';
 
     return `
-      <div class="room-card${isActive ? ' active' : ''}" data-key="${escapeHtml(k)}">
+      <div class="room-card${isActive ? ' active' : ''}" data-key="${escapeHtml(k)}" data-busy="${stats.busy}">
         ${moodNode}
         ${lobbyBubble}
         <div class="chimney-smoke" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -4421,6 +4421,48 @@ function birdFlybyLayerEl() {
   return document.getElementById('bird-flyby-layer') || _birdFlybyLayer;
 }
 
+// ── Town mascot (lobby ground) — layer survives lobby re-render ──
+// 작은 고양이가 로비 바닥을 어슬렁거린다. 위치 상태(_mascotX)는 모듈 전역으로
+// 유지해 매 render 마다 튀지 않게. bird-flyby 와 동일한 preserve/restore 패턴.
+let _mascotLayer = null;
+
+function buildMascotLayer() {
+  const layer = document.createElement('div');
+  layer.id = 'town-mascot-layer';
+  layer.className = 'town-mascot-layer';
+  layer.setAttribute('aria-hidden', 'true');
+  const mascot = document.createElement('div');
+  mascot.className = 'town-mascot';
+  mascot.title = '동네 고양이';
+  mascot.innerHTML =
+    '<div class="mascot-shadow" aria-hidden="true"></div>' +
+    '<div class="mascot-flip"><div class="sprite-wrap">' + renderSprite('cat', 3) + '</div></div>';
+  layer.appendChild(mascot);
+  return layer;
+}
+
+function preserveMascotLayer() {
+  const el = document.getElementById('town-mascot-layer');
+  if (el) {
+    _mascotLayer = el;
+    el.remove();
+  }
+}
+
+function restoreMascotLayer() {
+  if (currentRoom()) return;
+  const lobbyWrap = root.querySelector('.lobby-wrap');
+  if (!lobbyWrap) return;
+  if (!_mascotLayer) _mascotLayer = buildMascotLayer();
+  const vbg = lobbyWrap.querySelector('.village-bg');
+  if (vbg) vbg.after(_mascotLayer);
+  else lobbyWrap.appendChild(_mascotLayer);
+}
+
+function mascotLayerEl() {
+  return document.getElementById('town-mascot-layer') || _mascotLayer;
+}
+
 function render(snap) {
   if (snap) _pendingSnap = snap;
   if (_rafScheduled) return;
@@ -4464,9 +4506,11 @@ function _renderImpl(snap) {
 
   const room = currentRoom();
   preserveBirdFlybyLayer();
+  preserveMascotLayer();
   const view = room ? renderRoom(snap, room) : renderLobby(snap);
   root.innerHTML = view + detailHTML(snap);
   restoreBirdFlybyLayer();
+  restoreMascotLayer();
   mountIcons();
 
   // 오늘의 마을 소식 배너 (씬 밖 fixed 요소 — root 재렌더와 독립)
@@ -4712,6 +4756,121 @@ setInterval(applyTimeOfDay, 10 * 60 * 1000);
   });
 
   scheduleNext();
+})();
+
+// ── Town mascot wander — lobby ground critter, busy-house gravity ──
+// 가장 바쁜(=busy 펫 최다) 집 카드 x중앙으로 가벼운 lerp. busy 없으면 랜덤 산책.
+// 도착하면 가끔 멈춰 앉기(rest). translateX walk + scaleX(-1) 방향 뒤집기.
+(function initTownMascot() {
+  if (new URLSearchParams(window.location.search).get('preview')) return;
+  const motionQ = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  const MASCOT_W = 48;          // cat scale 3 footprint (16*3)
+  const EDGE = 10;              // 좌우 여백
+  const LERP = 0.018;           // 끌림 강도 (가벼움)
+  let x = null;                 // 현재 left px (모듈 수명 유지)
+  let targetX = null;           // 목표 left px
+  let dir = 1;                  // 1 오른쪽 / -1 왼쪽
+  let resting = false;
+  let restUntil = 0;
+  let nextRest = 0;             // 이 시각 전엔 안 쉼
+
+  function rand(min, max) { return min + Math.random() * (max - min); }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  // 레이아웃 read 는 매 프레임이 아니라 캐시 — getBoundingClientRect 60회/초가
+  // 레이아웃 thrash 를 유발했음(FPS 50→25). W 는 뷰포트 폭에만 의존하므로 resize 때만 갱신.
+  let W = 0;
+  function measureW() {
+    const layer = mascotLayerEl();
+    if (layer && layer.isConnected) { const w = layer.getBoundingClientRect().width; if (w > 0) W = w; }
+  }
+  window.addEventListener('resize', measureW);
+  let lastWrittenX = null, lastMoving = null, lastResting = null, lastDir = null;
+
+  function pickTarget(layer, W) {
+    const lobby = layer.closest('.lobby-wrap');
+    const cards = lobby ? lobby.querySelectorAll('.room-card[data-busy]') : [];
+    let best = null, bestBusy = 0;
+    cards.forEach(c => {
+      const b = parseInt(c.dataset.busy || '0', 10) || 0;
+      if (b > bestBusy) { bestBusy = b; best = c; }
+    });
+    const layerLeft = layer.getBoundingClientRect().left;
+    if (best && bestBusy > 0) {
+      const r = best.getBoundingClientRect();
+      const cx = (r.left + r.width / 2) - layerLeft;   // 바쁜 집 x중앙
+      return clamp(cx - MASCOT_W / 2, EDGE, W - MASCOT_W - EDGE);
+    }
+    return clamp(EDGE + Math.random() * (W - MASCOT_W - EDGE * 2), EDGE, W - MASCOT_W - EDGE);
+  }
+
+  function tick(ts) {
+    requestAnimationFrame(tick);
+    if (motionQ.matches) return;
+    if (currentRoom()) return;
+    const layer = mascotLayerEl();
+    if (!layer || !layer.isConnected) return;
+    const mascot = layer.querySelector('.town-mascot');
+    if (!mascot) return;
+    if (W <= 0) { measureW(); if (W <= 0) return; }
+
+    if (x == null) { x = W * 0.5; targetX = x; nextRest = ts + rand(4000, 8000); }
+
+    if (resting) {
+      if (ts >= restUntil) { resting = false; targetX = pickTarget(layer, W); }
+    } else if (Math.abs(targetX - x) < 2) {
+      // 도착 — 가끔 멈춰 앉기, 아니면 새 목표
+      if (ts >= nextRest) {
+        resting = true;
+        restUntil = ts + rand(2500, 5000);
+        nextRest = restUntil + rand(2000, 5000);
+      } else {
+        targetX = pickTarget(layer, W);
+      }
+    }
+
+    const prev = x;
+    x += (targetX - x) * LERP;
+    if (Math.abs(x - prev) > 0.25) dir = (x - prev) > 0 ? 1 : -1;
+    const moving = !resting && Math.abs(targetX - x) > 1.5;
+
+    // DOM write 는 실제 변화가 있을 때만 — 정지 중 매 프레임 style 갱신은 불필요한 recalc 유발.
+    if (lastWrittenX == null || Math.abs(x - lastWrittenX) > 0.1) {
+      mascot.style.transform = `translateX(${x.toFixed(1)}px)`;
+      lastWrittenX = x;
+    }
+    if (moving !== lastMoving) { mascot.classList.toggle('walking', moving); lastMoving = moving; }
+    const rest = resting && !moving;
+    if (rest !== lastResting) { mascot.classList.toggle('resting', rest); lastResting = rest; }
+    if (dir !== lastDir) {
+      const flip = mascot.querySelector('.mascot-flip');
+      if (flip) flip.style.transform = dir < 0 ? 'scaleX(-1)' : 'scaleX(1)';
+      lastDir = dir;
+    }
+  }
+
+  // 클릭 → 폴짝 + 하트 (기존 poke 패턴 재사용)
+  document.addEventListener('click', (e) => {
+    const mascot = e.target.closest('.town-mascot');
+    if (!mascot) return;
+    const wrap = mascot.querySelector('.sprite-wrap');
+    if (wrap) {
+      wrap.classList.remove('poked');
+      void wrap.offsetWidth;
+      wrap.classList.add('poked');
+      wrap.addEventListener('animationend', () => wrap.classList.remove('poked'), { once: true });
+    }
+    const heart = document.createElement('span');
+    heart.className = 'poke-heart';
+    heart.textContent = '❤';
+    heart.style.left = e.clientX + 'px';
+    heart.style.top = (e.clientY - 14) + 'px';
+    document.body.appendChild(heart);
+    heart.addEventListener('animationend', () => heart.remove(), { once: true });
+  });
+
+  requestAnimationFrame(tick);
 })();
 
 // ── Claude 토큰 사용량 헤더 표시 ─────────────────────────────────
