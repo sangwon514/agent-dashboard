@@ -3337,7 +3337,7 @@ function houseMood(sessions) {
 // 로비 전경에 선 작은 나무 팻말. 현재 마을 표시중 세션들의 "오늘 한눈 요약".
 // groupByProject 결과(=petsOf 캐시)를 재사용해 집계만 — 추가 순회 비용 최소.
 function townSummary(grouped) {
-  let busy = 0, tokens = 0, calls = 0;
+  let busy = 0, tokens = 0, calls = 0, problem = 0;
   const callsByType = new Map();
   for (const k of Object.keys(grouped)) {
     for (const s of grouped[k]) {
@@ -3346,6 +3346,7 @@ function townSummary(grouped) {
         tokens += (p.tokens || 0);
         calls += (p.calls || 0);
         if (p.state === 'busy') busy++;
+        else if (p.state === 'hurt' || p.state === 'stuck') problem++;
         callsByType.set(p.type, (callsByType.get(p.type) || 0) + (p.calls || 0));
       }
     }
@@ -3354,7 +3355,7 @@ function townSummary(grouped) {
   for (const [t, c] of callsByType) {
     if (c > topCalls) { topCalls = c; topType = t; }
   }
-  return { busy, tokens, calls, topType };
+  return { busy, tokens, calls, topType, problem };
 }
 
 // 오늘의 활동 스파크라인 — town 표시 세션들의 이벤트 started_at 을
@@ -3412,6 +3413,7 @@ function townBoardHTML(grouped) {
         <div class="tb-row"><span class="tb-ico" aria-hidden="true">🍪</span><b>${tokTxt}</b></div>
         <div class="tb-row"><span class="tb-ico" aria-hidden="true">⭐</span><span class="tb-top">${escapeHtml(topShort)}</span></div>
         <div class="tb-row"><span class="tb-ico" aria-hidden="true">🔁</span><b>${sum.calls}</b>회</div>
+        ${sum.problem > 0 ? `<div class="tb-row tb-row-attn"><span class="tb-ico" aria-hidden="true">⚠</span><b>${sum.problem}</b> 살펴봐요</div>` : ''}
       </div>${sparklineHTML(townSparkline(grouped))}
     </div>
     <div class="tb-post" aria-hidden="true"></div>
@@ -3489,6 +3491,16 @@ function renderLobby(snap) {
       ? `<div class="card-occupant">${humanCharacterHTML(repSession, { attached: true, noBubble: true })}</div>`
       : '';
 
+    // 주의 비콘 — hurt(실패)/stuck(응답없음) 펫이 있는 집만 강조. 보통 0개라 비용 0.
+    // 우선순위: 빨강(hurt) > 노랑(stuck). N = 문제 펫 수.
+    const attnCount = stats.hurt + stats.stuck;
+    const attnLevel = stats.hurt > 0 ? 'hurt' : (stats.stuck > 0 ? 'stuck' : null);
+    const attnClass = attnLevel ? ` attn attn-${attnLevel}` : '';
+    const attnNodes = attnLevel
+      ? `<div class="attn-ring" aria-hidden="true"></div>`
+        + `<div class="attn-badge attn-badge-${attnLevel}" aria-label="${attnCount}곳 주의">⚠ ${attnCount}</div>`
+      : '';
+
     const mood = houseMood(sessions);
     const moodNode = mood
       ? `<div class="house-mood mood-${mood.state}" aria-label="${escapeHtml(mood.label)}" title="${escapeHtml(mood.label)}">`
@@ -3498,7 +3510,8 @@ function renderLobby(snap) {
       : '';
 
     return `
-      <div class="room-card${isActive ? ' active' : ''}" data-key="${escapeHtml(k)}" data-busy="${stats.busy}">
+      <div class="room-card${isActive ? ' active' : ''}${attnClass}" data-key="${escapeHtml(k)}" data-busy="${stats.busy}">
+        ${attnNodes}
         ${moodNode}
         ${lobbyBubble}
         <div class="chimney-smoke" aria-hidden="true"><i></i><i></i><i></i></div>

@@ -836,6 +836,54 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1
   .house-mood { animation: none; }
 }
 
+/* ── 주의 비콘 (Attention Beacon) ──────────────────────────────────
+   hurt(실패)/stuck(응답없음) 펫이 있는 집만 강조. 문제 카드에만 노드가
+   생기므로(보통 0개) 평소 비용 0. 링은 box-shadow 정적, 펄스는 opacity 만
+   (transform/opacity 가드) — 느리게 ~2.5s. prefers-reduced-motion 가드. */
+.attn-ring {
+  position: absolute;
+  inset: -2px;
+  border-radius: 8px;
+  pointer-events: none;
+  z-index: 1;
+  animation: attn-pulse 2.5s ease-in-out infinite;
+}
+.attn-hurt .attn-ring {
+  box-shadow: 0 0 0 2px rgba(214, 69, 49, .60), 0 0 16px rgba(214, 69, 49, .32);
+}
+.attn-stuck .attn-ring {
+  box-shadow: 0 0 0 2px rgba(201, 150, 42, .60), 0 0 14px rgba(201, 150, 42, .28);
+}
+@keyframes attn-pulse {
+  0%, 100% { opacity: .50; }
+  50%      { opacity: 1; }
+}
+.attn-badge {
+  position: absolute;
+  top: -10px; right: -6px;     /* 우상단 모서리 — house-mood(좌상단)와 분리 */
+  z-index: 4;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-size: 11px; font-weight: 700; line-height: 1;
+  color: #fff;
+  white-space: nowrap;
+  border: 1px solid rgba(255, 255, 255, .5);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, .2);
+  pointer-events: none;
+  animation: attn-badge-bob 2.5s ease-in-out infinite;
+  will-change: transform;
+}
+.attn-badge-hurt  { background: #d64531; }   /* 빨강 — 실패 */
+.attn-badge-stuck { background: #c9962a; }   /* 노랑 — 응답없음 */
+@keyframes attn-badge-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-2px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .attn-ring, .attn-badge { animation: none; }
+  .attn-ring { opacity: .85; }
+}
+
 .room-title {
   display: flex; align-items: center; gap: 8px;
   font-weight: 600; font-size: 15px;
@@ -2573,6 +2621,9 @@ body[data-town="codex"] .scene .human-char.in-scene:hover {
 .tb-row { display: flex; align-items: baseline; gap: 4px; white-space: nowrap; }
 .tb-row .tb-ico { font-size: 11px; }
 .tb-row b { font-weight: 700; color: #ffe9b0; }
+/* 주의 행 — 문제 있을 때만 표시. 따뜻한 톤 안에서 살짝 경고색. */
+.tb-row-attn { color: #ffcf9a; }
+.tb-row-attn b { color: #ff9a78; }
 .tb-top { overflow: hidden; text-overflow: ellipsis; }
 /* 오늘의 활동 스파크라인 — 따뜻한 톤, 정적(트랜지션 없음) */
 .tb-spark {
